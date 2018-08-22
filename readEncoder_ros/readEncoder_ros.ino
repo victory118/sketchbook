@@ -3,7 +3,6 @@
 
 #include <ros.h>
 #include "Arduino.h"
-
 #include <std_msgs/Float32.h>
 #include <TimerOne.h>
 
@@ -31,7 +30,7 @@ volatile int countResetR = 0;
 
 // other variables
 const unsigned long sampleTime_us = 200000; // 200000us = 0.2s = 5Hz
-const float sampleRate_hz = 1.0/sampleTime_us/1e6;
+const float sampleRate_hz = 1.0/(sampleTime_us/1e6);
 const float pi = 3.1415;
 const int ppr = 1920; // encoder pulses per revolution of motor
 
@@ -39,11 +38,11 @@ void timerIsr(void) {
   Timer1.detachInterrupt(); // stop the timer
   
   //Left motor speed [rad/sec] = (pulses/sample) * (rev/pulses) * (2pi rad/rev) * (samples/sec)
-  left_wheel_vel.data = float(countResetL)*(1/ppr)*2*pi*sampleRate_hz;
+  left_wheel_vel.data = float(countResetL)*(1.0/ppr)*2.0*pi*sampleRate_hz;
   left_wheel_vel_pub.publish(&left_wheel_vel);
   
   //Right motor speed
-  right_wheel_vel.data = float(countResetR)*(1/ppr)*2*pi*sampleRate_hz;
+  right_wheel_vel.data = float(countResetR)*(1.0/ppr)*2.0*pi*sampleRate_hz;
   right_wheel_vel_pub.publish(&right_wheel_vel);
   
   countResetL = 0;
@@ -77,7 +76,7 @@ void encoderIntR() {
 }
 
 void setup() {
-  Serial.begin(9600);
+//  Serial.begin(9600);
   pinMode(clkPinL, INPUT);  
   pinMode(dirPinL, INPUT);
   attachInterrupt(0, encoderIntL, RISING);
@@ -89,33 +88,51 @@ void setup() {
   Timer1.initialize(sampleTime_us); //initialize timer1 with period sampleTime_us
   Timer1.attachInterrupt(timerIsr); //attaches timerIsr function every period
   
+  nh.initNode();
+  nh.advertise(left_wheel_vel_pub);
+  nh.advertise(right_wheel_vel_pub);
+  
 }
 
 void loop() {
-  if (changeFlagL) {
-    changeFlagL = false;
-    Serial.print("Left encoder count = ");
-    Serial.println(encoderCountL);
-  }
+//  if (changeFlagL) {
+//    changeFlagL = false;
+//    Serial.print("Left encoder count = ");
+//    Serial.println(encoderCountL);
+//  }
+//  
+//  if (changeFlagR) {
+//    changeFlagR = false;
+//    Serial.print("Right encoder count = ");
+//    Serial.println(encoderCountR);
+//  }
+//  
+//  Serial.print("Left encoder velocity (m/s) = ");
+//  Serial.println(left_wheel_vel.data);
+//  
+//  Serial.print("Right encoder velocity (m/s) = ");
+//  Serial.println(right_wheel_vel.data);
+//  
+//  Serial.print("Sample rate (Hz) = ");
+//  Serial.println(sampleRate_hz);
+//  
+//  delay(50);
   
-  if (changeFlagR) {
-    changeFlagR = false;
-    Serial.print("Right encoder count = ");
-    Serial.println(encoderCountR);
-  }
+  nh.spinOnce();
   
-  Serial.print("Left encoder velocity (m/s) = ");
-  Serial.println(left_wheel_vel.data);
+  // Debug
+//  const unsigned long sampleTime_us = 200000; // 200000us = 0.2s = 5Hz
+//  const float sampleRate_hz = 1.0/sampleTime_us/1e6;
+//  const float pi = 3.1415;
+//  const int ppr = 1920; // encoder pulses per revolution of motor
   
-  Serial.print("Right encoder velocity (m/s) = ");
-  Serial.println(right_wheel_vel.data);
+//  Serial.print("sampleTime_us = ");
+//  Serial.println(sampleTime_us);
+//  
+//  Serial.print("Sample rate (Hz) = ");
+//  Serial.println(sampleRate_hz);
+//  delay(1000);
   
-  Serial.print("Sample rate (Hz) = ");
-  Serial.println(sampleRate_hz);
-  
-//  Serial.print(digitalRead(chA));
-//  Serial.println(digitalRead(chB));
-  delay(1000);
 }
 
 #endif
