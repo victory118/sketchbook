@@ -4,7 +4,7 @@ Arduino Sketchook
 This repository contains my Arduino sketches for various projects.
 
 readEncoder.ino
-------------------------------
+----------------------
 
 One DC motor encoder and one LS7184 quadrature encoders are set up to measure the encoder counts and direction of the DC motor. The measurements are sent to the Serial port to be displayed.
 
@@ -20,9 +20,9 @@ motor_driver.ino
 
 These instructions are based on the tutorial [here](https://hackernoon.com/apply-coursera-control-of-mobile-robots-with-ros-and-rosbots-part-1-777a51f63617). First upload this sketch onto the Arduino.
 
-Next start the **ROS Master** by opening a new terminal and running `roscore`. Next start the **rosserial client** application that forward your Arduino messages to the rest of **ROS** by opening a new terminal and running
+Next start the **ROS Master** by opening a new terminal and running `roscore`. Next start the **rosserial client** application that forwards your Arduino messages to the rest of **ROS** by opening a new terminal and running
 
-```bash
+```
 rosrun rosserial_python serial_node.py /dev/ttyACM0
 ```
 If necessary, replace `ttyACM0` with the correct serial port information by going to **Tools | Serial Port** from the Arduino IDE drop-down menu.
@@ -42,5 +42,26 @@ If you run `rostopic list` in the terminal, the output should be
 /wheel_power_right
 ```
  
- 
+ To make the left wheel spin forward at maximum speed, enter the command
+```bash
+rostopic pub -1 /wheel_power_left std_msgs/Float32 '{data: 1.0}'
+```
+Replacing `{data: 1.0}` with `{data: 0.0}` or `{data: -1.0}` should make the left wheel stop spinning or spin in the opposite direction at maximum speed, respectively. This message can take on values between -1.0 and 1.0 to map to a desired wheel power. The analogous commands can be sent to the right wheel by replacing `/wheel_power_left` with `/wheel_power_right`. Giving rosnode list a command in this case be understood as publishing a message of type `std_msgs/Float32` to a ROS topic (`/wheel_power_left` or `/wheel_power_right`), which is subscribed to by the rosnode called `/uno_serial_node`.
+
+readEncoder_ros.ino
+---------------------------
+This sketch combines that of **motor_driver.ino** and **readTwoEncoders.ino**. In this sketch, I created two publisher objects that publish to ROS topics called `/left_wheel_velocity` and `/right_wheel_velocity`. I also created two subscriber objects that subscribe to ROS topics called `/wheel_power_left` and `/wheel_power_right`. I can command a power to be delivered to each wheel by publishing a message on the terminal to the `/wheel_power_left` and `/wheel_power_right` topics, as explained in the **motor_driver.ino** section. Furthermore, I can read the left (or right) wheel velocity by going into a new terminal and running the command
+```
+rostopic echo /left_wheel_velocity
+```
+A tool for visualizing the active ROS nodes and topics can be run by entering the command
+```
+rqt_graph
+```
+To see the topics show up in `rqt_graph`, you will have to run `rostopic echo <some-ros-topic>`.
+
+A useful tool for visualizing the wheel velocity measurements is a plotting GUI that can be run by entering the command
+```
+rqt_plot
+```
 
