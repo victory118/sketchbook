@@ -12,7 +12,7 @@ namespace Farmaid
         /*
          * @brief Class constructor
          */
-        DifferentialDrive(float wheelbase_meters, float wheelRadius_meters, float maxMotorSpeed_rps)
+        DifferentialDrive(float wheelbase, float wheel_radius, float maxMotorSpeed_rps)
             : wheelbase(wheelbase_meters), wheelRadius(wheelRadius_meters), maxMotorSpeed(maxMotorSpeed_rps)
         {
             // maxVel - max linear velocity of robot when it has zero angular velocity (same as max wheel speed)
@@ -21,7 +21,7 @@ namespace Farmaid
             maxAngVel = 2.0 * maxWheelSpeed / wheelbase_meters
         }
       
-        float computeDesWheelVel(float desVel, float desAngVel)
+        float UpdateDesWheelVel(float des_vel, float des_ang_vel)
         {
             // v - desired robot linear velocity [m/s]
             // w - desired robot angular velocity [rad/s]
@@ -36,7 +36,7 @@ namespace Farmaid
             
             rightWheelVel = ((2.0 * v) + (w * wheelbase)) / (2.0 * wheelRadius);
 
-            
+            // TODO: Finish implementation here
             
             return rightWheelVel;
         }
@@ -52,17 +52,17 @@ namespace Farmaid
             return leftWheelVel;
         }
 
-        float getLeftDesWheelVel( return leftDesWheelVel );
-        float getRightDesWheelVel( return rightDesWheelVel );
+        float get_left_des_wheel_vel_( return leftDesWheelVel );
+        float get_right_des_wheel_vell( return rightDesWheelVel );
         
     private:
-        float wheelbase
-        float wheelRadius
-        float maxMotorSpeed
-        float maxVel
-        float maxAngVel
+        const float kWheelbase_;
+        const float kWheelRadius_;
+        const float kMaxMotorSpeed_;
+        const float kMaxVel_; // can this be set in the constructor?
+        const float kMaxAngVel_; // can this be set in the constructor?
 
-        float leftDesWheelVel // desired left wheel linear velocity [m/s]
-        float rightDesWheelVel // desired right wheel linear velocity [m/s]
+        float left_des_wheel_vel_; // desired left wheel linear velocity [m/s]
+        float right_des_wheel_vel_; // desired right wheel linear velocity [m/s]
     };
 };

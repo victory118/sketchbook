@@ -1,10 +1,13 @@
 #include "Arduino.h"
 
 // Encoder parameters
-const int ENC_CLK_PIN_L = 2;
-const int ENC_DIR_PIN_L = 8;
-const int ENC_CLK_PIN_R = 3;
-const int ENC_DIR_PIN_R = 9;
+const int kLeftEncClkPin = 2;
+const int kLeftEncDirPin = 8;
+const int kRightEncClkPin = 3;
+const int kRightEncDirPin= 9;
+
+// const float ENC_FACTOR = 4
+const float COUNTS_PER_REV = 1920.0;
 
 // Left encoder variables
 volatile int encoderCountL = 0;
@@ -51,6 +54,11 @@ namespace Farmaid
         {
             pinMode(clkPin, INPUT);
             pinMode(dirPin, INPUT);
+        }
+
+        void updateCount()
+        {
+            
         }
 
     private:

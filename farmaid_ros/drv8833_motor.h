@@ -26,24 +26,27 @@ namespace Farmaid
 
         void setSpeed(int desSpeed)
         {
-            // desSpeed is clipped to be in range [-1.0, 1.0] and then mapped to maximum input range [-255, 255]
+            // desSpeed is clipped to be in range [-1.0, 1.0] and then mapped to maximum output range [-255, 255]
             clippedSpeed = max(min(desSpeed, 1.0f), -1.0f);
-            currentSpeed = speed;
+ 
             if (clippedSpeed >= 0)
             {
                 digitalWrite(motorDirPin, LOW);
-                analogWrite(motorPwmPin, (unsigned int)(maxInput * clippedSpeed)); 
+//                analogWrite(motorPwmPin, (unsigned int)(maxOutput * clippedSpeed)); 
             }
             else
             {
                 digitalWrite(motorDirPin, HIGH);
-                analogWrite(motorPwmPin, (unsigned int)(maxInput * (1.0f + clippedSpeed))); 
+//                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (1.0f + clippedSpeed))); // is this one correct?
+//                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (-clippedSpeed)));  
             }
+            motorCommand = (unsigned int)(abs(clippedSpeed) * maxOutput);
+            analogWrite(motorPwmPin, motorCommand);
         }
          
     private:
         int motorDirPin;
         int motorPwmPin;
-        const int maxInput = 255;
+        const int maxOutput = 255;
     }
 }
