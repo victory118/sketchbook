@@ -41,7 +41,7 @@ If you run `rostopic list` in the terminal, the output should be
 /wheel_power_left
 /wheel_power_right
 ```
- 
+
  To make the left wheel spin forward at maximum speed, enter the command
 ```bash
 rostopic pub -1 /wheel_power_left std_msgs/Float32 '{data: 1.0}'
@@ -64,4 +64,17 @@ A useful tool for visualizing the wheel velocity measurements is a plotting GUI 
 ```
 rqt_plot
 ```
+Mininum and maximum motor speed at no load
+-----------------
+### Left motor
+Minimum positive speed: 0.19/1.0 power measures 2.5 rad/s
 
+Maximum positive speed: 1.0/1.0 power measures 26 rad/s
+
+Minimum negative speed: -0.08/-1.0 power measures -1.6 rad/s
+
+Maximum negative speed: -1.0/-1.0 power measures -25.3 rad/s
+
+## farmaid_ros.ino
+
+This sketch instantiates a Robot object containing specific attributes and methods that characterize its different components and behaviors, respectively. The purpose of this program is to receive high level linear and angular velocity commands from a supervisory controller in ROS and output low level control commands to the motors to allow the robot to achieve the desired linear and angular velocity. Another function of this program is to calculate the speed and odometry of the robot based on encoder measurements and publish them to ROS. This code is organized into various classes including: Robot, DifferentialDrive, Motor, Encoder, and PidController.
