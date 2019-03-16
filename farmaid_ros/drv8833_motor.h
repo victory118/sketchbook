@@ -14,39 +14,39 @@ namespace Farmaid
     public:
         /*
          * @brief Class constructor
-         * @param dirPin the direction pin 
-         * @param pwmpin the PWM pin
+         * @param dir_pin_ the direction pin 
+         * @param pwm_pin the PWM pin
          */
-         Motor(int dirPin, int pwmPin)
-            : MotorDriver(), motorDirPin(dirPin), motorPwmPin(pwmPin)
+         Motor(int dir_pin, int pwm_pin)
+            : MotorDriver(), dir_pin_(dir_pin), pwm_pin_(pwm_pin)
          {
-             pinMode(pwmPin, OUTPUT);
-             pinMode(dirPin, OUTPUT);
+             pinMode(pwm_pin_, OUTPUT);
+             pinMode(dir_pin_, OUTPUT);
          }
 
-        void setSpeed(int desSpeed)
+        void SetCommand(int command)
         {
-            // desSpeed is clipped to be in range [-1.0, 1.0] and then mapped to maximum output range [-255, 255]
-            clippedSpeed = max(min(desSpeed, 1.0f), -1.0f);
+            // command is saturated to range [-1.0, 1.0] and then mapped to range [-255, 255]
+            clipped_command = max(min(command, 1.0f), -1.0f);
  
-            if (clippedSpeed >= 0)
+            if (clipped_command >= 0)
             {
-                digitalWrite(motorDirPin, LOW);
+                digitalWrite(dir_pin_, LOW);
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * clippedSpeed)); 
             }
             else
             {
-                digitalWrite(motorDirPin, HIGH);
+                digitalWrite(dir_pin_, HIGH);
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (1.0f + clippedSpeed))); // is this one correct?
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (-clippedSpeed)));  
             }
-            motorCommand = (unsigned int)(abs(clippedSpeed) * maxOutput);
+            motorCommand = (unsigned int)(abs(clipped_command) * max_command_);
             analogWrite(motorPwmPin, motorCommand);
         }
          
     private:
-        int motorDirPin;
-        int motorPwmPin;
-        const int maxOutput = 255;
+        int dir_pin_;
+        int pwm_pin_;
+        const int max_command_ = 255;
     }
 }

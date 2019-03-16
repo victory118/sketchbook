@@ -4,12 +4,13 @@
 #include "encoder.h"
 #include "pid_controller.h"
 
-// Sampling rates
+// Control loop sample rate
 const float kControlFreq = 100; // Hz
 const float kControlSampleTime = 1.0 / kControlFreq; // sec
 const float kControlSampleTimeMicros = kControlSampleTime * 1e6; // microsec
 unsigned long prev_control_time_micros = 0;
 
+// ROS communication sample rate
 const float kRosFreq = 50; // Hz
 const float kRosSampleTime = 1.0 / kRosFreq; // sec
 const float kRosSampleTimeMs = kRosSampleTime * 1e6; // microsec
@@ -39,19 +40,19 @@ namespace Farmaid
     public:
         Robot()
         : left_motor_(kLeftMotorPwmPin, kLeftMotorDirPin), right_motor_(kRightMotorPwmPin, kRightMotorDirPin),
-          left_encoder_(kLeftEncClkPin, kLeftEncDirPin), right_encoder_(kRightEncClkPin, kRightEncDirPin),
+          left_encoder_(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime), right_encoder_(kRightEncClkPin, kRightEncDirPin, kControlSampleTime),
           diff_drive_(kWheelbase, kWheelRadius, kMaxMotorSpeed)
         {
-            left_motor_pid = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
-            right_motor_pid = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
+            left_motor_pid_ = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
+            right_motor_pid_ = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
         }
 
     void Execute(float des_vel, float des_ang_vel)
     {
 
-        // Update the encoder member variables with current encoder measurements
-        left_encoder_.UpdateCount();
-        right_encoder_.UpdateCount();
+        // Process encoder measurements
+        left_encoder_.ProcessMeasurement(left_encoder_count);
+        right_encoder_.ProcessMeasurement(right_encoder_count);
 
         // Calculate the current wheel velocities
         curr_left_wheel_vel = diff_drive_.ConvertAngVel2WheelVel(left_encoder_.get_ang_vel());
@@ -93,8 +94,8 @@ void setup() {
   unsigned long curr_time_micros = micros();
 
   // Attach encoder interrupts
-  attachInterrupt(0, encoderIntL, RISING);
-  attachInterrupt(1, encoderIntR, RISING);
+  attachInterrupt(0, LeftEncoderInterrupt, RISING);
+  attachInterrupt(1, RightEncoderInterrupt, RISING);
   
   // Necessary for encoder interrupts to initialize
   delay(200);

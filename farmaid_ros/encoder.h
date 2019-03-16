@@ -7,40 +7,34 @@ const int kRightEncClkPin = 3;
 const int kRightEncDirPin= 9;
 
 // const float ENC_FACTOR = 4
-const float COUNTS_PER_REV = 1920.0;
+const float kEncoderCpr = 1920.0; // encoder counts per revolution
 
 // Left encoder variables
-volatile int encoderCountL = 0;
-volatile boolean changeFlagL = false;
-volatile int countResetL = 0;
+volatile int left_encoder_count = 0;
+volatile boolean left_encoder_change_flag = false;
 
 // Right encoder variables
-volatile int encoderCountR = 0;
-volatile boolean changeFlagR = false;
-volatile int countResetR = 0;
+volatile int right_encoder_count = 0;
+volatile boolean right_encoder_change_flag = false;
 
-void encoderIntL() {
-  if (digitalRead(ENC_DIR_PIN_L) == HIGH) {
-    encoderCountL++;
-    countResetL++;
+void LeftEncoderInterrupt() {
+  if (digitalRead(kLeftEncDirPin) == HIGH) {
+    left_encoder_count++;
   }
   else {
-    encoderCountL--;
-    countResetL--;
+    left_encoder_count--;
   }
-  changeFlagL = true;
+  left_encoder_change_flag = true;
 }
 
-void encoderIntR() {
-  if (digitalRead(ENC_DIR_PIN_R) == LOW) {
-    encoderCountR++;
-    countResetR++;
+void RightEncoderInterrupt() {
+  if (digitalRead(kRightEncDirPin) == LOW) {
+    right_encoder_count++;
   }
   else {
-    encoderCountR--;
-    countResetR--;
+    right_encoder_count--;
   }
-  changeFlagR = true;
+  right_encoder_change_flag = true;
 }
 
 namespace Farmaid
@@ -48,25 +42,33 @@ namespace Farmaid
     class Encoder
     {
     public:
-        Encoder(int clkPin, int dirPin)
-            : clkPin(clkPin), dirPin(dirPin),
-            prevEncCount(0), dTheta(0)
+        Encoder(int clk_pin, int dir_pin, float sample_time)
+            : clk_pin_(clk_pin), dir_pin_(dir_pin),
+              sample_time_(sample_time)
         {
-            pinMode(clkPin, INPUT);
-            pinMode(dirPin, INPUT);
+            pinMode(clk_pin_, INPUT);
+            pinMode(dir_pin_, INPUT);
+
+            prev_count_ = 0;
+            delta_count_ = 0
         }
 
-        void updateCount()
+        void ProcessMeasurement()
         {
+            
             
         }
 
     private:
-        const float revToEnc = 1920.0; // encoder counts per revolution
-        const float encToRev = 1.0 / revToEnc; // revolutions per encoder count
-        const float encToRad = encToRev * 2 * PI; // encoder counts to radians
-
-        signed long prevEncCount;
-        float dTheta;
+        const int clk_pin_;
+        const int dir_pin_;
+        const float sample_time_; // time period between sampling encoder measurements
+        
+        const int rev_to_enc = 1920; // encoder counts per revolution
+        const float enc_to_rev = 1.0 / rev_to_enc; // revolutions per encoder count
+        const float enc_to_rad = enc_to_rev * 2 * PI; // radians per encoder count
+        
+        signed long prev_count_;
+        int delta_count_;
     };
 };

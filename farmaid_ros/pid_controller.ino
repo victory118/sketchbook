@@ -5,70 +5,78 @@ namespace Farmaid
     class PidController
     {
     public:
-        PidController(float pGain, float iGain, float dGain, float filtConst, float sampleTime)
-            : Kp(pGain), Ki(iGain), Kd(dGain), Kf(filtConst), Ts(sampleTime)
+        PidController(float p_gain, float i_gain, float d_gain, float filt_const, float sample_time)
+            : p_gain_(p_gain), i_gain_(i_gain), d_gain_(d_gain), filt_const_(filt_const), sample_time_(sample_time)
         {
-            prevFiltError = 0; // filtered error in previous time step
-            intError = 0; // integral error
+            prev_filt_error_ = 0; // filtered error in previous time step
+            int_error_ = 0; // integral error
+
+            p_control_ = 0; // proportional component of control command
+            i_control = 0; // integral component of control command
+            d_control_ = 0; // derivative component of control command
+            control_command_ = 0; // total control command
         }
 
-        float compute(des, curr)
+        float Compute(des, curr)
         {
             error = des - curr;
-            filtError = (1 - Kf) * prevFiltError + Kf * error;
-            intError = intError + error * Ts;
+            filt_error = (1 - filt_const_) * prev_filt_error_ + filt_const_ * error;
+            int_error_ = int_error_ + error * sample_time_;
             
-            pControl = Kp * error;
-            iControl = Ki * intError;
-            dControl = Kd * (filtError - prevFiltError) / Ts;
+            p_control_ = p_gain_ * error;
+            i_control_ = i_gain_ * int_error_;
+            d_control_ = d_gain_ * (filt_error_ - prev_filt_error_) / sample_time_;
 
-            controlCommand = pControl + iControl + dControl;
+            control_command_ = p_control_ + i_control_ + d_control_;
 
-            prevFiltError = filtError;
+            prev_filt_error_ = filt_error_;
 
-            return controlCommand;
+            return control_command_;
         }
 
-        void resetIntError()
+        // TODO: Anti-integrator windup
+        // TODO: Feedforward
+
+        void set_int_error(float int_error) { int_error_ = int_error; }
+
+        void set_prev_filt_error(float prev_filt_error) { prev_filt_error_ = prev_filt_error; }
+
+        void Reset()
         {
-            intError = 0;
+            set_int_error(0);
+            set_prev_filt_error(0);
         }
 
-        void resetFiltError()
-        {
-            prevFiltError = 0;
-        }
-
-        void reset()
-        {
-            resetIntError();
-            resetFiltError();
-        }
-
-        float getPGain() { return Kp; };
-        float getIGain() { return Ki; };
-        float getDGain() { return Kd; };
-        float getFiltConst() { return Kf; };
-        float getPControl() { return pControl; };
-        float getIControl() { return iControl; };
-        float getDControl() { return dControl; };
+        void set_p_gain(float p_gain) { p_gain_ = p_gain; }
+        void set_i_gain(float i_gain) { i_gain_ = i_gain; }
+        void set_d_gain(float d_gain) { d_gain_ = d_gain; }
+        void set_filt_const(float filt_const) { filt_const_ = filt_const; }
+        float get_p_gain() { return p_gain_; }
+        float get_i_gain() { return i_gain_; }
+        float get_d_gain() { return d_gain_; }
+        float get_filt_const() { return filt_const_; }
+        float get_p_control() { return p_control_; }
+        float get_i_control() { return i_control_; }
+        float get_d_control() { return d_control_; }
+        float get_control_command() { return control_command_; }
 
     private:
-        float Kp; // proportional gain
-        float Ki; // integral gain
-        float Kd; // derivative gain
-        float Kf; // first order low-pass filter constant
-        // Kf = Ts / (Ts + Tf) - typically around 0.1
-        // higher Kf -> lower Tf -> higher cut-off freq. -> more filtering
+        float p_gain_; // proportional gain
+        float i_gain_; // integral gain
+        float d_gain_; // derivative gain
+        float filt_const_; // first order low-pass filter constant for derivative error
+        // filt_const = Ts / (Ts + Tf) - typically around 0.1
+        // higher filt_const -> lower Tf -> higher cut-off freq. -> more filtering
         
-        float Ts; // sample time [sec]
+        float sample_time_; // [sec]
         
-        float prevFiltError;
-        float intError;
+        float prev_filt_error_;
+        float int_error_;
 
         // Debug
-        float pControl; // proportional component of control input
-        float iControl; // integral component of control input
-        float dControl; // derivative component of control input
+        float p_control_; // proportional component of control command
+        float i_control_; // integral component of control command
+        float d_control_; // derivative component of control command
+        float control_command_; // total control command
     };
 };
