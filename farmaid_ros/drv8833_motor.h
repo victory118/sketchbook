@@ -5,11 +5,10 @@
  */
 
 #include <Arduino.h>
-#include "motor_driver.h"
 
 namespace Farmaid
 {
-    class Motor : public MotorDriver
+    class Motor
     {
     public:
         /*
@@ -18,18 +17,19 @@ namespace Farmaid
          * @param pwm_pin the PWM pin
          */
          Motor(int dir_pin, int pwm_pin)
-            : MotorDriver(), dir_pin_(dir_pin), pwm_pin_(pwm_pin)
+            : dir_pin_(dir_pin), pwm_pin_(pwm_pin)
          {
              pinMode(pwm_pin_, OUTPUT);
              pinMode(dir_pin_, OUTPUT);
+             motor_command_ = 0;
          }
 
-        void SetCommand(int command)
+        void SetCommand(float value)
         {
-            // command is saturated to range [-1.0, 1.0] and then mapped to range [-255, 255]
-            clipped_command = max(min(command, 1.0f), -1.0f);
+            // input value is limited to range [-1.0, 1.0] and then mapped to range [-255, 255]
+            float lim_value = max(min(value, 1.0f), -1.0f);
  
-            if (clipped_command >= 0)
+            if (lim_value >= 0)
             {
                 digitalWrite(dir_pin_, LOW);
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * clippedSpeed)); 
@@ -40,13 +40,14 @@ namespace Farmaid
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (1.0f + clippedSpeed))); // is this one correct?
 //                analogWrite(motorPwmPin, (unsigned int)(maxOutput * (-clippedSpeed)));  
             }
-            motorCommand = (unsigned int)(abs(clipped_command) * max_command_);
-            analogWrite(motorPwmPin, motorCommand);
+            motor_command_ = (unsigned int)(abs(lim_value) * max_command_);
+            analogWrite(pwm_pin_, motor_command_);
         }
          
     private:
         int dir_pin_;
         int pwm_pin_;
+        int motor_command_;
         const int max_command_ = 255;
-    }
-}
+    };
+};

@@ -13,8 +13,10 @@ unsigned long prev_control_time_micros = 0;
 // ROS communication sample rate
 const float kRosFreq = 50; // Hz
 const float kRosSampleTime = 1.0 / kRosFreq; // sec
-const float kRosSampleTimeMs = kRosSampleTime * 1e6; // microsec
+const float kRosSampleTimeMicros = kRosSampleTime * 1e6; // microsec
 unsigned long prev_ros_time_micros = 0;
+
+unsigned long curr_time_micros;
 
 // Robot parameters
 const float kWheelbase = 0.5; // meters
@@ -39,12 +41,14 @@ namespace Farmaid
     {
     public:
         Robot()
-        : left_motor_(kLeftMotorPwmPin, kLeftMotorDirPin), right_motor_(kRightMotorPwmPin, kRightMotorDirPin),
-          left_encoder_(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime), right_encoder_(kRightEncClkPin, kRightEncDirPin, kControlSampleTime),
-          diff_drive_(kWheelbase, kWheelRadius, kMaxMotorSpeed)
+        : left_motor_(Motor(kLeftMotorPwmPin, kLeftMotorDirPin)),
+          right_motor_(Motor(kRightMotorPwmPin, kRightMotorDirPin)),
+          left_motor_pid_(PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime)),
+          right_motor_pid_(PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime)),
+          left_encoder_(Encoder(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime)),
+          right_encoder_(Encoder(kRightEncClkPin, kRightEncDirPin, kControlSampleTime)),
+          diff_drive_(DifferentialDrive(kWheelbase, kWheelRadius, kMaxMotorSpeed))
         {
-            left_motor_pid_ = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
-            right_motor_pid_ = PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime);
         }
 
     void Execute(float des_vel, float des_ang_vel)
@@ -55,21 +59,21 @@ namespace Farmaid
         right_encoder_.ProcessMeasurement(right_encoder_count);
 
         // Calculate the current wheel velocities
-        curr_left_wheel_vel = diff_drive_.ConvertAngVel2WheelVel(left_encoder_.get_ang_vel());
-        curr_right_wheel_vel = diff_drive_.ConvertAngVel2WheelVel(right_encoder_.get_ang_vel());
+        float curr_left_wheel_vel = diff_drive_.AngVelToWheelVel(left_encoder_.get_ang_vel_rps());
+        float curr_right_wheel_vel = diff_drive_.AngVelToWheelVel(right_encoder_.get_ang_vel_rps());
 
         // Calculate the desired wheel velocities
-        diff_drive_.UpdateDesWheelVel(des_vel, des_ang_vel);
-        des_left_wheel_vel = diff_drive_.get_des_left_wheel_vel();
-        des_right_wheel_vel = diff_drive_.get_des_right_wheel_vel();
+        diff_drive_.MapUniToDiff(des_vel, des_ang_vel);
+        float des_left_wheel_vel = diff_drive_.get_left_wheel_vel();
+        float des_right_wheel_vel = diff_drive_.get_right_wheel_vel();
 
         // Compute controller commands based on desired and current wheel velocities
-        left_motor_command = left_motor_pid_.ComputeCommand(des_left_wheel_vel, curr_left_wheel_vel);
-        right_motor_command = right_motor_pid_.ComputeCommand(des_right_wheel_vel, curr_right_wheel_vel);
+        float left_motor_command = left_motor_pid_.ComputeCommand(des_left_wheel_vel, curr_left_wheel_vel);
+        float right_motor_command = right_motor_pid_.ComputeCommand(des_right_wheel_vel, curr_right_wheel_vel);
 
         // Send controller commands to each motor
-        left_motor_.set_command(left_motor_command);
-        right_motor_.set_command(right_motor_command);
+        left_motor_.SetCommand(left_motor_command);
+        right_motor_.SetCommand(right_motor_command);
     }
         
     private:
@@ -86,12 +90,10 @@ namespace Farmaid
     };
 };
 
+Farmaid::Robot robot; // instantiate robot
+
 void setup() {
   // put your setup code here, to run once:
-
-  Farmaid::Robot robot; // instantiate robot
-
-  unsigned long curr_time_micros = micros();
 
   // Attach encoder interrupts
   attachInterrupt(0, LeftEncoderInterrupt, RISING);
@@ -107,20 +109,20 @@ void loop() {
   curr_time_micros = micros();
 
   // Publish and subscribe to/from ROS master at this rate
-  if (curr_time_micros - prev_ros_time_micros) >= kRosSampleTimeMicros:
+  if ((curr_time_micros - prev_ros_time_micros) >= kRosSampleTimeMicros)
   {
-      nh.spinOnce();
+//      nh.spinOnce();
       prev_ros_time_micros = curr_time_micros;
   }
 
   // Execute control loop at this rate
-  if (curr_time_micros - prev_control_time_micros) >= kControlSampleTimeMicros:
+  if ((curr_time_micros - prev_control_time_micros) >= kControlSampleTimeMicros)
   {
       // Get the desired velocity and angular velocity from the subscribed topic
-      des_vel = getDesVel(); // TODO
-      des_ang_vel = getDesAngVel(); // TODO
+      float des_vel = 0; // TODO
+      float des_ang_vel = 0; // TODO
       
-      robot.Execute(des_vel, des_ang_vel));
+      robot.Execute(des_vel, des_ang_vel);
       prev_control_time_micros = curr_time_micros;
   }
 
