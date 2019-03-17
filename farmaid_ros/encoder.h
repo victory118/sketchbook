@@ -1,4 +1,4 @@
-#include "Arduino.h"
+#include <Arduino.h>
 
 // Encoder parameters
 const int kLeftEncClkPin = 2;
@@ -61,8 +61,17 @@ namespace Farmaid
             ang_vel_cps_ = (curr_count_ - prev_count_) / sample_time_;
         }
 
+        void Reset()
+        {
+            prev_count_ = 0;
+            curr_count_ = 0;
+            ang_vel_cps_ = 0;
+        }
+
         float get_ang_vel_cps() { return ang_vel_cps_; }
         float get_ang_vel_rps() { return ang_vel_cps_ / counts_per_rev_ * 2.0 * PI; }
+        signed long get_curr_count() { return curr_count_; }
+        signed long get_prev_count() { return prev_count_; }
 
     private:
         const int clk_pin_;
