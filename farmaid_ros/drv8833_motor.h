@@ -8,6 +8,15 @@
 
 namespace Farmaid
 {
+
+    struct MotorParams
+    {
+        byte pwm_pin;
+        byte dir_pin;
+        unsigned int max_command; //  0-255 for 0-100% PWM duty cycle
+        float no_load_rps; // max speed with no load [rad/s]
+    }
+    
     class Motor
     {
     public:
@@ -16,9 +25,9 @@ namespace Farmaid
          * @param dir_pin_ the direction pin 
          * @param pwm_pin the PWM pin
          */
-         Motor(int pwm_pin, int dir_pin)
-            : pwm_pin_(pwm_pin), dir_pin_(dir_pin),
-              max_command_(255), command_(0)
+         Motor(MotorParams p)
+            : pwm_pin_(p.pwm_pin), dir_pin_(p.dir_pin),
+              max_command_(p.max_command), command_(0)
          {
              pinMode(pwm_pin, OUTPUT);
              pinMode(dir_pin, OUTPUT);
@@ -26,7 +35,7 @@ namespace Farmaid
 
         void set_command(float value)
         {
-            // input value is limited to range [-1.0, 1.0] and then mapped to range [-255, 255]
+            // input value is limited to range [-1.0, 1.0] and then mapped to range [-max_command_, +max_command_]
             float factor = max(min(value, 1.0f), -1.0f);
             if (factor >= 0)
             {
@@ -49,3 +58,30 @@ namespace Farmaid
         unsigned int command_;
     };
 };
+
+void DoMotorOpenLoopTest(Motor motor)
+{
+
+    Serial.println("Starting motor open loop test.");
+    Serial.println("");
+    delay(200);
+
+    float factor = 0.5;
+    int test_array[7] = {0, 1, 2, 3, 2, 1, 0};
+    int array_size = sizeof(test_array) / sizeof(test_array[0]);
+    
+    Serial.println("Moving forward...");
+    for (int i = 0; i < array_size; i++) {
+        motor.set_command(test_array[i] * factor);
+        Serial.println("Motor command = " + motor.get_command());
+        delay(2000);
+    }
+
+    Serial.println("Moving backward...");
+    for (int i = 0; i < array_size; i++)
+    {
+        motor.set_command(-test_array[i] * factor);
+        Serial.println("Motor command = " + motor.get_command());
+        delay(2000);
+    }
+}

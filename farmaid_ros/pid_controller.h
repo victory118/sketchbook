@@ -2,14 +2,23 @@
 
 namespace Farmaid
 {
+    struct PidParams
+    {
+        float p_gain;
+        float i_gain;
+        float d_gain;
+        float filt_const;
+        unsigned int sample_period;
+    }
+    
     class PidController
     {
     public:
-        PidController(float p_gain, float i_gain, float d_gain, float filt_const, float sample_time)
-            : p_gain_(p_gain), i_gain_(i_gain), d_gain_(d_gain), filt_const_(filt_const), sample_time_(sample_time),
+        PidController(PidParams p)
+            : p_gain_(p.p_gain), i_gain_(p.i_gain), d_gain_(p.d_gain), filt_const_(p.filt_const), sample_period_(p.sample_period),
               prev_filt_error_(0),
               int_error_(0),
-              p_control_(0), i_control_(0), d_control_(0), control_command_(0)
+              p_control_(0), i_control_(0), d_control_(0), command_(0)
         {
         }
 
@@ -17,17 +26,17 @@ namespace Farmaid
         {
             float error = des - curr;
             float filt_error = (1 - filt_const_) * prev_filt_error_ + filt_const_ * error;
-            int_error_ = int_error_ + error * sample_time_;
+            int_error_ = int_error_ + error * sample_period_;
             
             p_control_ = p_gain_ * error;
             i_control_ = i_gain_ * int_error_;
-            d_control_ = d_gain_ * (filt_error - prev_filt_error_) / sample_time_;
+            d_control_ = d_gain_ * (filt_error - prev_filt_error_) / sample_period_;
 
-            control_command_ = p_control_ + i_control_ + d_control_;
+            command_ = p_control_ + i_control_ + d_control_;
 
             prev_filt_error_ = filt_error;
 
-            return control_command_;
+            return command_;
         }
 
         // TODO: Anti-integrator windup
@@ -54,7 +63,7 @@ namespace Farmaid
         float get_p_control() { return p_control_; }
         float get_i_control() { return i_control_; }
         float get_d_control() { return d_control_; }
-        float get_control_command() { return control_command_; }
+        float get_command() { return command_; }
 
     private:
         float p_gain_; // proportional gain
@@ -65,7 +74,7 @@ namespace Farmaid
         // filt_const = Ts / (Ts + Tf) - typically around 0.1
         // higher filt_const -> lower Tf -> higher cut-off freq. -> more filtering
         
-        float sample_time_; // [sec]
+        float sample_period_; // [sec]
         
         float prev_filt_error_; // filtered error in previous time step
         float int_error_; // integral error
@@ -74,6 +83,6 @@ namespace Farmaid
         float p_control_; // proportional component of control command
         float i_control_; // integral component of control command
         float d_control_; // derivative component of control command
-        float control_command_; // total control command
+        float command_; // total command
     };
 };
