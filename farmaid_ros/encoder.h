@@ -1,42 +1,5 @@
 #include <Arduino.h>
 
-// Encoder parameters
-const int kLeftEncClkPin = 2;
-const int kLeftEncDirPin = 8;
-const int kRightEncClkPin = 3;
-const int kRightEncDirPin= 9;
-
-// const float ENC_FACTOR = 4
-const float kEncoderCpr = 1920.0; // encoder counts per revolution
-
-// Left encoder variables
-volatile int left_encoder_count = 0;
-volatile boolean left_encoder_change_flag = false;
-
-// Right encoder variables
-volatile int right_encoder_count = 0;
-volatile boolean right_encoder_change_flag = false;
-
-void LeftEncoderInterrupt() {
-  if (digitalRead(kLeftEncDirPin) == HIGH) {
-    left_encoder_count++;
-  }
-  else {
-    left_encoder_count--;
-  }
-  left_encoder_change_flag = true;
-}
-
-void RightEncoderInterrupt() {
-  if (digitalRead(kRightEncDirPin) == LOW) {
-    right_encoder_count++;
-  }
-  else {
-    right_encoder_count--;
-  }
-  right_encoder_change_flag = true;
-}
-
 namespace Farmaid
 {
     class Encoder
@@ -58,7 +21,7 @@ namespace Farmaid
         {
             prev_count_ = curr_count_;
             curr_count_ = encoder_count;
-            ang_vel_cps_ = (curr_count_ - prev_count_) / sample_time_;
+            vel_cps_ = (curr_count_ - prev_count_) / sample_time_;
         }
 
         void Reset()
@@ -68,8 +31,8 @@ namespace Farmaid
             ang_vel_cps_ = 0;
         }
 
-        float get_ang_vel_cps() { return ang_vel_cps_; }
-        float get_ang_vel_rps() { return ang_vel_cps_ / counts_per_rev_ * 2.0 * PI; }
+        float get_vel_cps() { return vel_cps_; }
+        float get_vel_rps() { return vel_cps_ / counts_per_rev_ * 2.0 * PI; }
         signed long get_curr_count() { return curr_count_; }
         signed long get_prev_count() { return prev_count_; }
 
@@ -82,6 +45,6 @@ namespace Farmaid
 
         signed long curr_count_;
         signed long prev_count_;
-        float ang_vel_cps_; // angular velocity [encoder counts/s]
+        float vel_cps_; // angular velocity [encoder counts/s]
     };
 };

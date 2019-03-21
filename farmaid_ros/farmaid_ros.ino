@@ -3,56 +3,87 @@
 #include "drv8833_motor.h"
 #include "encoder.h"
 #include "pid_controller.h"
+#include "params.h"
 
-// Control loop sample rate
-const float kControlFreq = 100; // Hz
-const float kControlSampleTime = 1.0 / kControlFreq; // sec
-const float kControlSampleTimeMicros = kControlSampleTime * 1e6; // microsec
-unsigned long prev_control_time_micros = 0;
+unsigned long ros_prev_millis;
+unsigned long control_prev_millis;
+unsigned long curr_millis;
+const unsigned long ros_period = 40; // ROS communication period [millis]
+const unsigned long control_period = 5; // control loop period [millis]
 
-// ROS communication sample rate
-const float kRosFreq = 50; // Hz
-const float kRosSampleTime = 1.0 / kRosFreq; // sec
-const float kRosSampleTimeMicros = kRosSampleTime * 1e6; // microsec
-unsigned long prev_ros_time_micros = 0;
+const float wheelbase = 0.14; // [m]
+const float wheel_radius = 0.065 / 2; [m]
+const float no_load_rps = 0.4 / wheel_radius; // determined experimentally in [m/s] --> [rad/s]
 
-unsigned long curr_time_micros;
+// Encoder counter variables must be global because they use hardware interrupts
+volatile int left_encoder_count = 0;
+volatile boolean left_encoder_change_flag = false;
+volatile int right_encoder_count = 0;
+volatile boolean right_encoder_change_flag = false;
 
-// Robot parameters
-const float kWheelbase = 0.14; // meters
-const float kWheelRadius = 0.065 / 2; // meters
+// Initialize encoder parameter struct
+// {byte clk_pin (byte), byte dir_pin, float counts_per_rev, unsigned int sample_period, int *count_ptr}
+Farmaid::EncoderParams left_encoder_p = {2, 8, 1920.0, control_period, &left_encoder_count};
+Farmaid::EncoderParams right_encoder_p = {3, 9, 1920.0, control_period, &right_encoder_count};
 
-// Motor hardware interface parameters
-const int kLeftMotorPwmPin = 6;
-const int kLeftMotorDirPin = 7;
-const int kRightMotorPwmPin = 5;
-const int kRightMotorDirPin = 4;
-const float kMaxMotorSpeed = 0.4 / kWheelRadius; // use the minimum of the two max motor speeds [rad/sec]
-// empirically, max_wheel_vel = 0.4 m/s; in rad/s = wheel_vel [m/s] / wheel_radius [m]  
+// Initialize motor parameter struct
+// {byte pwm_pin, byte dir_pin, unsigned int max_command, float no_load_rps}
+Farmaid::MotorParams left_motor_p = {6, 7, 255, no_load_rps};
+Farmaid::MotorParams right_motor_p = {5, 4, 255, no_load_rps};
 
-// Motor PID controller parameters
-float p_gain = 0; // proportional gain
-float i_gain = 0; // integral gain
-float d_gain = 0; // derivative gain
-float filt_const = 0; // first order low-pass filter constant; 0: pass-through, 0-1: low-pass, 1: one time-step delay
+// Initialize PID controller parameter struct
+// {float p_gain, float i_gain, float d_gain, float filt_const, unsigned int sample_period}
+Farmaid::PidParams left_pid_p = {1.0, 0.0, 0.0, 0.0, control_period};
+Farmaid::PidParams right_pid_p = {1.0, 0.0, 0.0, 0.0, control_period};
+
+// Initialize motor controller parameter struct
+// {EncoderParams encoder_p, MotorParams motor_p, PidParams pid_p}
+Farmaid::MotorControllerParams left_motor_controller_p = {left_encoder_p, left_motor_p, left_pid_p};
+Farmaid::MotorControllerParams right_motor_controller_p = {right_encoder_p, right_motor_p, right_pid_p};
+
+// Initialize robot parameter struct
+// {MotorControllerParams left_p, MotorControllerParams right_p, float wheelbase, float wheel_radius}
+Farmaid::RobotParams robot_p = {left_motor_controller_p, right_motor_controller_p, wheelbase, wheel_radius}
+
+void LeftEncoderInterrupt() {
+  if (digitalRead(left_encoder_count) == HIGH) {
+    left_encoder_count++;
+  }
+  else {
+    left_encoder_count--;
+  }
+  left_encoder_change_flag = true;
+}
+
+void RightEncoderInterrupt() {
+  if (digitalRead(right_encoder_count) == LOW) {
+    right_encoder_count++;
+  }
+  else {
+    right_encoder_count--;
+  }
+  right_encoder_change_flag = true;
+}
 
 namespace Farmaid
 {
     class Robot
     {
     public:
-        Robot()
-        : left_motor_(Motor(kLeftMotorPwmPin, kLeftMotorDirPin)),
-          right_motor_(Motor(kRightMotorPwmPin, kRightMotorDirPin)),
-          left_motor_pid_(PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime)),
-          right_motor_pid_(PidController(p_gain, i_gain, d_gain, filt_const, kControlSampleTime)),
-          left_encoder_(Encoder(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime)),
-          right_encoder_(Encoder(kRightEncClkPin, kRightEncDirPin, kControlSampleTime)),
-          diff_drive_(DifferentialDrive(kWheelbase, kWheelRadius, kMaxMotorSpeed))
+        Robot(MotorControllerParams left_motor_controller_p, MotorControllerParams right_motor_controller_p,
+              float wheelbase, float wheel_radius)
+        : left_motor_controller_(MotorController(left_motor_controller_p)),
+          right_motor_controller_(MotorController(right_motor_controller_p)),
+          wheelbase_(wheelbase), wheel_radius_(wheel_radius)
         {
+            // Calculate max_vel
+
+            // Calculate max_ang_vel
+
+            
         }
 
-    void Execute(float vel, float ang_vel)
+    void Drive(float vel, float ang_vel)
     {
 
         // Process encoder measurements
@@ -75,23 +106,77 @@ namespace Farmaid
         // Send controller commands to each motor
         left_motor_.set_command(left_motor_command);
         right_motor_.set_command(right_motor_command);
+
+        UniToDiff(vel,Ang
     }
+
+    void UniToDiff(float vel, float ang_vel)
+        {
+            // This function ensures that ang_vel is respected as best as possible
+            // by scaling vel.
+            // vel - desired robot linear velocity [m/s]
+            // ang_vel - desired robot angular velocity [rad/s]
+
+            if (!ensure_ang_vel_)
+            {
+                right_wheel_vel_ = (vel + ang_vel * wheelbase_ / 2.0);
+                left_wheel_vel_ = (vel - ang_vel* wheelbase_ / 2.0);
+                return;
+            }
+            
+            // 1. Limit vel and ang_vel to be within the possible range
+            float lim_ang_vel = max(min(ang_vel, max_ang_vel_), -max_ang_vel_);
+            float lim_vel = max(min(vel, max_vel_), -max_vel_);
+
+            // 2. Compute left and right wheel velocities required to achieve limited vel and ang_vel
+            float lim_right_wheel_vel = (lim_vel + lim_ang_vel * wheelbase_ / 2.0);
+            float lim_left_wheel_vel = (lim_vel - lim_ang_vel* wheelbase_ / 2.0);
+
+            // 3. Find max and min of the limited wheel velocities
+            float max_lim_wheel_vel = max(lim_right_wheel_vel, lim_left_wheel_vel);
+            float min_lim_wheel_vel = min(lim_right_wheel_vel, lim_left_wheel_vel);
+
+            // 4. Shift limited wheel velocities if they exceed the maximum wheel velocity
+            if (max_lim_wheel_vel > max_vel_)
+            {
+                right_wheel_vel_ = lim_right_wheel_vel - (max_lim_wheel_vel - max_vel_);
+                left_wheel_vel_ = lim_left_wheel_vel - (max_lim_wheel_vel - max_vel_);
+            }
+            else if (min_lim_wheel_vel < -max_vel_) 
+            {
+                right_wheel_vel_ = lim_right_wheel_vel - (min_lim_wheel_vel + max_vel_);
+                left_wheel_vel_ = lim_left_wheel_vel - (min_lim_wheel_vel + max_vel_);
+            }
+            else
+            {
+                right_wheel_vel_ = lim_right_wheel_vel;
+                left_wheel_vel_ = lim_left_wheel_vel;
+            }      
+        }
         
     private:
-        Motor left_motor_;
-        Motor right_motor_;
-        
-        PidController left_motor_pid_;
-        PidController right_motor_pid_;
-        
-        Encoder left_encoder_;
-        Encoder right_encoder_;
+        MotorController left_motor_controller_;
+        MotorController right_motor_controller_;
 
-        DifferentialDrive diff_drive_;
+        float wheelbase_;
+        float wheel_radius_;
+
+        float max_vel_; // maximum forward velocity of robot with no rotation [m/s]
+        float max_ang_vel_; // maximum angular velocity of robot with pure rotation [rad/s]
     };
 };
 
-//Farmaid::Robot robot; // instantiate robot
+// Initialize objects
+Farmaid::Encoder left_encoder = Farmaid::Encoder(left_encoder_p);
+Farmaid::Encoder right_encoder = Farmaid::Encoder(right_encoder_p);
+Farmaid::Motor left_motor = Farmaid::Motor(left_motor_p);
+Farmaid::Motor right_motor = Farmaid::Motor(right_motor_p);
+Farmaid::PidController left_pid = Farmaid::PidController(left_pid_p);
+Farmaid::PidController right_pid = Farmaid::PidController(right_pid_p);
+Farmaid::MotorController left_motor_controller = Farmaid::MotorController(left_motor_controller_p);
+Farmaid::MotorController right_motor_controller = Farmaid::MotorController(right_motor_controller_p);
+Farmaid::Robot robot = Farmaid::Robot(robot_p); // instantiate robot
+
 bool run_test;
 
 void setup() {
@@ -134,7 +219,7 @@ void loop() {
     if (run_test)
     {
 //        TestMotorOpenLoop();
-        TestEncodersManual();
+//        TestEncoderManual();
         run_test = false;
     }
 
@@ -172,7 +257,7 @@ void TestMotorOpenLoop()
     }
 }
 
-void TestEncodersManual()
+void TestEncoderManual()
 {
     Farmaid::Encoder left_encoder = Farmaid::Encoder(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime);
     Farmaid::Encoder right_encoder = Farmaid::Encoder(kRightEncClkPin, kRightEncDirPin, kControlSampleTime);
@@ -199,26 +284,40 @@ void TestEncodersManual()
 //
 //        delay(50);
             
-            left_encoder.ProcessMeasurement(left_encoder_count);
-            right_encoder.ProcessMeasurement(right_encoder_count);
+        left_encoder.ProcessMeasurement(left_encoder_count);
+        right_encoder.ProcessMeasurement(right_encoder_count);
 
-            if (left_encoder.get_curr_count() != left_encoder.get_prev_count())
-            {
-                Serial.print("Left encoder count (prev) = ");
-                Serial.println(left_encoder.get_prev_count());
-                Serial.print("Left encoder count = ");
-                Serial.println(left_encoder.get_curr_count());
-            }
+        if (left_encoder.get_curr_count() != left_encoder.get_prev_count())
+        {
+            Serial.print("Left encoder count (prev) = ");
+            Serial.println(left_encoder.get_prev_count());
+            Serial.print("Left encoder count = ");
+            Serial.println(left_encoder.get_curr_count());
+        }
 
-            if (right_encoder.get_curr_count() != right_encoder.get_prev_count())
-            {
-                Serial.print("Right encoder count (prev) = ");
-                Serial.println(right_encoder.get_prev_count());
-                Serial.print("Right encoder count = ");
-                Serial.println(right_encoder.get_curr_count());
-            }
+        if (right_encoder.get_curr_count() != right_encoder.get_prev_count())
+        {
+            Serial.print("Right encoder count (prev) = ");
+            Serial.println(right_encoder.get_prev_count());
+            Serial.print("Right encoder count = ");
+            Serial.println(right_encoder.get_curr_count());
+        }
 
-            delay(1000);
+        delay(1000);
 
-        }        
+    }        
+}
+
+void TestPositionControl()
+{
+    Farmaid::Encoder left_encoder = Farmaid::Encoder(kLeftEncClkPin, kLeftEncDirPin, kControlSampleTime);
+    Farmaid::Motor motor = Farmaid::Motor(kLeftMotorPwmPin, kLeftMotorDirPin);
+    Farmaid::PidController motor_pid = Farmaid::PidController(1.0, 0.1, 0.0, 0.0, kControlSampleTime)
+
+    unsigned long current_time = micros();
+
+    
+
+    
+    
 }

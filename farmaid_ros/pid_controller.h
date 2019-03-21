@@ -60,7 +60,8 @@ namespace Farmaid
         float p_gain_; // proportional gain
         float i_gain_; // integral gain
         float d_gain_; // derivative gain
-        float filt_const_; // first order low-pass filter constant for derivative error
+        float filt_const_; // first order low-pass filter constant for derivative error 
+        // 0: pass-through, 0-1: low-pass, 1: one time-step delay
         // filt_const = Ts / (Ts + Tf) - typically around 0.1
         // higher filt_const -> lower Tf -> higher cut-off freq. -> more filtering
         
