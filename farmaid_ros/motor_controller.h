@@ -1,5 +1,7 @@
+#ifndef MOTOR_CONTROLLER_H
+#define MOTOR_CONTROLLER_H
+
 #include <Arduino.h>
-#include "differential_drive.h"
 #include "drv8833_motor.h"
 #include "encoder.h"
 #include "pid_controller.h"
@@ -34,11 +36,11 @@ namespace Farmaid
             // Process encoder measurement
             encoder_.ProcessMeasurement();
 
-            // Get the current motor velocity
-            pos_ = encoder_.get_vel_rps();
+            // Get the current motor position
+            pos_ = encoder_.get_pos_rad();
 
             // Compute controller command based on desired and current velocities
-            command_ = pid_.ComputeCommand(des_vel, pos_);
+            command_ = pid_.ComputeCommand(des_pos, pos_);
 
             // Send controller command to motor
             motor_.set_command(command_); 
@@ -54,9 +56,15 @@ namespace Farmaid
         float get_pos() { return pos_; }
 
     private:
+        Encoder encoder_;
+        Motor motor_;
+        PidController pid_;
+        
         float vel_; // [rad/s]
         float pos_; // [rad]
         float command_;
        
-    }
-}
+    };
+};
+
+#endif

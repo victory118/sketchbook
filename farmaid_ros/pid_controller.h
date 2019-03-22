@@ -1,3 +1,6 @@
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
+
 #include <Arduino.h>
 
 namespace Farmaid
@@ -9,7 +12,7 @@ namespace Farmaid
         float d_gain;
         float filt_const;
         unsigned int sample_period;
-    }
+    };
     
     class PidController
     {
@@ -52,6 +55,14 @@ namespace Farmaid
             set_prev_filt_error(0);
         }
 
+        void set_gains(float p_gain, float i_gain, float d_gain, float filt_const)
+        {
+            p_gain_ = p_gain;
+            i_gain_ = i_gain;
+            d_gain_ = d_gain;
+            filt_const_ = filt_const;
+        }
+
         void set_p_gain(float p_gain) { p_gain_ = p_gain; }
         void set_i_gain(float i_gain) { i_gain_ = i_gain; }
         void set_d_gain(float d_gain) { d_gain_ = d_gain; }
@@ -86,3 +97,5 @@ namespace Farmaid
         float command_; // total command
     };
 };
+
+#endif

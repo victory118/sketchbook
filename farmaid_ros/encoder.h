@@ -1,3 +1,6 @@
+#ifndef ENCODER_H
+#define ENCODER_H
+
 #include <Arduino.h>
 
 namespace Farmaid
@@ -9,16 +12,16 @@ namespace Farmaid
         byte dir_pin;
         float counts_per_rev; // encoder counts per revolution
         float sample_period; // time period between sampling encoder measurements [sec]
-    }
+    };
     
     class Encoder
     {
     public:
-        Encoder(EncoderParams p, int *count_ptr)
+        Encoder(EncoderParams p, volatile int *count_ptr)
             : clk_pin_(p.clk_pin), dir_pin_(p.dir_pin),
               counts_per_rev_(p.counts_per_rev),
               sample_period_(p.sample_period),
-              count_ptr_(count_ptr)
+              count_ptr_(count_ptr),
               count_(0),
               prev_count_(0),
               vel_cps_(0)                        
@@ -30,7 +33,7 @@ namespace Farmaid
         void ProcessMeasurement()
         {
             prev_count_ = count_;
-            count_ = *count_ptr;
+            count_ = *count_ptr_;
             vel_cps_ = (count_ - prev_count_) / sample_period_;
         }
 
@@ -44,7 +47,9 @@ namespace Farmaid
         float get_vel_cps() { return vel_cps_; }
         float get_vel_rps() { return vel_cps_ / counts_per_rev_ * 2.0 * PI; }
         signed long get_count() { return count_; }
+        float get_pos_rad() { return count_ / counts_per_rev_ * 2.0 * PI; }
         signed long get_prev_count() { return prev_count_; }
+        float get_counts_per_rev() { return counts_per_rev_; }
 
     private:
         const byte clk_pin_;
@@ -57,49 +62,37 @@ namespace Farmaid
         signed long prev_count_;
         float vel_cps_; // velocity [encoder counts/s]
 
-        int *count_ptr; // pointer to the global variable that holds the encoder counts
+        volatile int *count_ptr_; // pointer to the global variable that holds the encoder counts
     };
 };
 
-void ReadEncoders()
-{
+extern Farmaid::EncoderParams left_encoder_p;
+extern Farmaid::EncoderParams right_encoder_p;
 
-    if (curr_millis - prev_print_millis >= print_period)
-    {
-        // This reads directly from the global variables
-//        if (left_encoder_change_flag) {
-//            left_encoder_change_flag = false;
-//            Serial.print("Left encoder count = ");
-//            Serial.println(left_encoder_count);
-//        }
-//
-//        if (right_encoder_change_flag) {
-//            right_encoder_change_flag = false;
-//            Serial.print("Right encoder count = ");
-//            Serial.println(right_encoder_count);
-//        }
+// Encoder counter variables are global because they use hardware interrupts
+volatile int left_encoder_count = 0;
+volatile boolean left_encoder_change_flag = false;
+volatile int right_encoder_count = 0;
+volatile boolean right_encoder_change_flag = false;
 
-        // This reads from the encoder objects
-        
-        left_encoder.ProcessMeasurement();
-        right_encoder.ProcessMeasurement();
-
-        if (left_encoder.get_count() != left_encoder.get_prev_count())
-        {
-            Serial.print("Left encoder count (prev) = ");
-            Serial.println(left_encoder.get_prev_count());
-            Serial.print("Left encoder count = ");
-            Serial.println(left_encoder.get_count());
-        }
-
-        if (right_encoder.get_count() != right_encoder.get_prev_count())
-        {
-            Serial.print("Right encoder count (prev) = ");
-            Serial.println(right_encoder.get_prev_count());
-            Serial.print("Right encoder count = ");
-            Serial.println(right_encoder.get_count());
-        }
-
-        prev_print_millis = curr_millis;
-    }        
+void LeftEncoderInterrupt() {
+  if (digitalRead(left_encoder_p.dir_pin) == HIGH) {
+    left_encoder_count++;
+  }
+  else {
+    left_encoder_count--;
+  }
+  left_encoder_change_flag = true;
 }
+
+void RightEncoderInterrupt() {
+  if (digitalRead(right_encoder_p.dir_pin) == LOW) {
+    right_encoder_count++;
+  }
+  else {
+    right_encoder_count--;
+  }
+  right_encoder_change_flag = true;
+}
+
+#endif

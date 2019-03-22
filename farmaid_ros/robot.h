@@ -1,4 +1,7 @@
-# include <Arduino.h>
+#ifndef ROBOT_H
+#define ROBOT_H
+
+#include <Arduino.h>
 
 namespace Farmaid
 {
@@ -8,7 +11,7 @@ namespace Farmaid
         // struct to hold left and right wheel velocity variables
         float left; // left wheel velocity [m/s]
         float right;// right wheel velocity [m/s]
-    }
+    };
   
     class Robot
     {
@@ -23,34 +26,34 @@ namespace Farmaid
           wheelbase_(wheelbase), wheel_radius_(wheel_radius)
         {
             // TODO: Calculate max_vel
-            max_vel = 0.0;
+            max_vel_ = 0.0;
             // TODO: Calculate max_ang_vel
-            max_ang_vel = 0.0;
+            max_ang_vel_ = 0.0;
         }
 
-    void Drive(float vel, float ang_vel)
-    {
-        // Process encoder measurements
-        left_encoder_.ProcessMeasurement();
-        right_encoder_.ProcessMeasurement();
+        void Drive(float vel, float ang_vel)
+        {
+            // Process encoder measurements
+            left_encoder_.ProcessMeasurement();
+            right_encoder_.ProcessMeasurement();
 
-        // Calculate the current wheel velocities
-        float curr_left_wheel_vel = left_encoder_.get_vel_rps() * wheel_radius_;
-        float curr_right_wheel_vel = right_encoder_.get_vel_rps() * wheel_radius_;
+            // Calculate the current wheel velocities
+            float curr_left_wheel_vel = left_encoder_.get_vel_rps() * wheel_radius_;
+            float curr_right_wheel_vel = right_encoder_.get_vel_rps() * wheel_radius_;
 
-        // Compute the desired wheel velocities
-        des_wheel_vel = UniToDiff(vel, ang_vel);
+            // Compute the desired wheel velocities
+            DiffDriveWheelVel des_wheel_vel = UniToDiff(vel, ang_vel);
 
-        // Compute controller commands based on desired and current wheel velocities
-        float left_motor_command = left_pid_.ComputeCommand(des_wheel_vel.left, curr_left_wheel_vel);
-        float right_motor_command = right_pid_.ComputeCommand(des_wheel_vel.right, curr_right_wheel_vel);
+            // Compute controller commands based on desired and current wheel velocities
+            float left_motor_command = left_pid_.ComputeCommand(des_wheel_vel.left, curr_left_wheel_vel);
+            float right_motor_command = right_pid_.ComputeCommand(des_wheel_vel.right, curr_right_wheel_vel);
 
-        // Send controller commands to each motor
-        left_motor_.set_command(left_motor_command);
-        right_motor_.set_command(right_motor_command);
-    }
+            // Send controller commands to each motor
+            left_motor_.set_command(left_motor_command);
+            right_motor_.set_command(right_motor_command);
+        }
 
-    DiffDriveWheelVel UniToDiff(float vel, float ang_vel)
+        DiffDriveWheelVel UniToDiff(float vel, float ang_vel)
         {
             // This function ensures that ang_vel is respected as best as possible
             // by scaling vel.
@@ -61,9 +64,9 @@ namespace Farmaid
 
             if (!ensure_ang_vel_)
             {
-                right_wheel_vel_ = (vel + ang_vel * wheelbase_ / 2.0);
-                left_wheel_vel_ = (vel - ang_vel* wheelbase_ / 2.0);
-                return;
+                diff_drive_wheel_vel.right = (vel + ang_vel * wheelbase_ / 2.0);
+                diff_drive_wheel_vel.left = (vel - ang_vel* wheelbase_ / 2.0);
+                return diff_drive_wheel_vel;
             }
             
             // 1. Limit vel and ang_vel to be within the possible range
@@ -81,19 +84,21 @@ namespace Farmaid
             // 4. Shift limited wheel velocities if they exceed the maximum wheel velocity
             if (max_lim_wheel_vel > max_vel_)
             {
-                right_wheel_vel_ = lim_right_wheel_vel - (max_lim_wheel_vel - max_vel_);
-                left_wheel_vel_ = lim_left_wheel_vel - (max_lim_wheel_vel - max_vel_);
+                diff_drive_wheel_vel.right = lim_right_wheel_vel - (max_lim_wheel_vel - max_vel_);
+                diff_drive_wheel_vel.left = lim_left_wheel_vel - (max_lim_wheel_vel - max_vel_);
             }
             else if (min_lim_wheel_vel < -max_vel_) 
             {
-                right_wheel_vel_ = lim_right_wheel_vel - (min_lim_wheel_vel + max_vel_);
-                left_wheel_vel_ = lim_left_wheel_vel - (min_lim_wheel_vel + max_vel_);
+                diff_drive_wheel_vel.right = lim_right_wheel_vel - (min_lim_wheel_vel + max_vel_);
+                diff_drive_wheel_vel.left = lim_left_wheel_vel - (min_lim_wheel_vel + max_vel_);
             }
             else
             {
-                right_wheel_vel_ = lim_right_wheel_vel;
-                left_wheel_vel_ = lim_left_wheel_vel;
-            }      
+                diff_drive_wheel_vel.right = lim_right_wheel_vel;
+                diff_drive_wheel_vel.left = lim_left_wheel_vel;
+            }
+
+            return diff_drive_wheel_vel;
         }
         
     private:
@@ -111,5 +116,9 @@ namespace Farmaid
 
         float max_vel_; // maximum forward velocity of robot with no rotation [m/s]
         float max_ang_vel_; // maximum angular velocity of robot with pure rotation [rad/s]
+
+        bool ensure_ang_vel_;
     };
 };
+
+#endif

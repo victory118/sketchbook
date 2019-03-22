@@ -1,28 +1,22 @@
 #include <Arduino.h>
-#include "differential_drive.h"
 #include "drv8833_motor.h"
 #include "encoder.h"
 #include "pid_controller.h"
 #include "motor_controller.h"
 #include "robot.h"
+#include "test.h"
 
 unsigned long ros_prev_millis;
 unsigned long control_prev_millis;
 unsigned long print_prev_millis;
 unsigned long curr_millis;
 const unsigned long ros_period = 40; // ROS communication period [millis]
-const unsigned long control_period = 5; // control loop period [millis]
-const unsigned long print_period = 1000; // period for printing to terminal for debugging [millis]
+const unsigned long control_period = 10; // control loop period [millis]
+const unsigned long print_period = 10; // period for printing to terminal for debugging [millis]
 
 const float wheelbase = 0.14; // [m]
-const float wheel_radius = 0.065 / 2; [m]
+const float wheel_radius = 0.065 / 2; // [m]
 const float no_load_rps = 0.4 / wheel_radius; // determined experimentally in [m/s] --> [rad/s]
-
-// Encoder counter variables are global because they use hardware interrupts
-volatile int left_encoder_count = 0;
-volatile boolean left_encoder_change_flag = false;
-volatile int right_encoder_count = 0;
-volatile boolean right_encoder_change_flag = false;
 
 // Initialize encoder parameter struct
 // {byte clk_pin (byte), byte dir_pin, float counts_per_rev, float sample_period}
@@ -39,29 +33,9 @@ Farmaid::MotorParams right_motor_p = {5, 4, 255, no_load_rps};
 Farmaid::PidParams left_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 Farmaid::PidParams right_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 
-void LeftEncoderInterrupt() {
-  if (digitalRead(left_encoder_count) == HIGH) {
-    left_encoder_count++;
-  }
-  else {
-    left_encoder_count--;
-  }
-  left_encoder_change_flag = true;
-}
-
-void RightEncoderInterrupt() {
-  if (digitalRead(right_encoder_count) == LOW) {
-    right_encoder_count++;
-  }
-  else {
-    right_encoder_count--;
-  }
-  right_encoder_change_flag = true;
-}
-
 // Initialize encoders, motors, and PID controllers
-Farmaid::Encoder left_encoder = Farmaid::Encoder(left_encoder_p);
-Farmaid::Encoder right_encoder = Farmaid::Encoder(right_encoder_p);
+Farmaid::Encoder left_encoder = Farmaid::Encoder(left_encoder_p, &left_encoder_count);
+Farmaid::Encoder right_encoder = Farmaid::Encoder(right_encoder_p, &right_encoder_count);
 Farmaid::Motor left_motor = Farmaid::Motor(left_motor_p);
 Farmaid::Motor right_motor = Farmaid::Motor(right_motor_p);
 Farmaid::PidController left_pid = Farmaid::PidController(left_pid_p);
@@ -96,10 +70,17 @@ void loop() {
     curr_millis = millis();
 
     // Test individual components
-//    ReadEncoders();
-//    DoMotorOpenLoopTest(left_motor);
-//    DoMotorOpenLoopTest(right_motor);
-//    left_motor_controller.DoPositionControl();
+//    ReadEncoders(); // Passed!
+//    Farmaid::TestEncoderClass(); // Passed!
+//    TestMotorOpenLoop(left_motor, 1); // Passed!
+//    TestMotorOpenLoop(left_motor, -1); // Passed!
+//    TestMotorOpenLoop(right_motor, 1); // Passed!
+//    TestMotorOpenLoop(right_motor, -1); // Passed!
+
+    // Max change is 1 rotation
+    // At max change, should be 
+    left_pid.set_gains(2.0, 0.0, 0.0, 0.0);
+    TestMotorPositionControl(left_motor, left_encoder, left_pid, 1);
 //    right_motor_controller.DoPositionControl();
 //    left_motor_controller.DoVelocityControl();
 //    right_motor_controller.DoVelocityControl();
