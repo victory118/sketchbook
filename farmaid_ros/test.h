@@ -98,10 +98,10 @@ void TestMotorOpenLoop(Motor &motor, float factor)
         {
             command = 0.0 * factor;
         }
-//        Serial.println(command);
+
         motor.set_command(command);
-        Serial.println(motor.get_command());
         control_prev_millis = curr_millis;
+        Serial.println(motor.get_command() / 255.0);
     }
 }
 
@@ -110,6 +110,8 @@ void TestMotorPositionControl(Motor &motor, Encoder &encoder, PidController &pid
 
     float setpoint = 0;
     float units = encoder.get_counts_per_rev();
+    float command = 0;
+    float curr_pos = 0;
 
     if (curr_millis - control_prev_millis >= control_period)
     {
@@ -123,7 +125,7 @@ void TestMotorPositionControl(Motor &motor, Encoder &encoder, PidController &pid
         }
         else if (curr_millis < 6000)
         {
-            setpoint = 0.5 * factor;
+            setpoint = 1.0 * factor;
         }
         else if (curr_millis < 8000)
         {
@@ -134,40 +136,124 @@ void TestMotorPositionControl(Motor &motor, Encoder &encoder, PidController &pid
             setpoint = 0.0 * factor;
         }
 
+        // Process encoder measurement
+        encoder.ProcessMeasurement();
+
+        // Get the current motor position
+        curr_pos = encoder.get_count() / units;
+
+        // Compute controller command based on desired and current position
+        command = pid.ComputeCommand(setpoint, curr_pos);
+
+        // Send controller command to motor
+        motor.set_command(command);
+
+        control_prev_millis = curr_millis;
+
 //        Serial.print(pid.get_p_gain());
 //        Serial.print(" ");
 //        Serial.print(pid.get_p_control());
 //        Serial.print(" ");
-        Serial.print(pid.get_command());
+//        Serial.print(pid.get_error());
+//        Serial.print(" ");
+//        Serial.print(pid.get_command());
+//        Serial.print(" ");
+//        Serial.print(command);
+//        Serial.print(" ");
+        Serial.print(2.0);
+        Serial.print(" ");
+        Serial.print(-2.0);
         Serial.print(" ");
         Serial.print(setpoint);
         Serial.print(" ");
-        Serial.println(encoder.get_count() / units);
+        Serial.println(curr_pos);
+    }
+}
+
+void TestMotorVelocityControl(Motor &motor, Encoder &encoder, PidController &pid, float factor)
+{
+
+    float setpoint = 0;
+    float units = encoder.get_counts_per_rev();
+    float command = 0;
+    float curr_pos = 0;
+
+    if (curr_millis - control_prev_millis >= control_period)
+    {
+        if (curr_millis < 2000)
+        {
+            setpoint = 0 * factor;   
+        }
+        else if (curr_millis < 4000)
+        {
+            setpoint = 0.5 * factor;
+        }
+        else if (curr_millis < 6000)
+        {
+            setpoint = 1.0 * factor;
+        }
+        else if (curr_millis < 8000)
+        {
+            setpoint = 0.5 * factor;
+        }
+        else
+        {
+            setpoint = 0.0 * factor;
+        }
 
         // Process encoder measurement
         encoder.ProcessMeasurement();
 
         // Get the current motor position
-        float curr_pos = encoder.get_count() / units;
+        curr_pos = encoder.get_count() / units;
 
         // Compute controller command based on desired and current position
-        float command = pid.ComputeCommand(setpoint, curr_pos);
+        command = pid.ComputeCommand(setpoint, curr_pos);
 
-        //        Serial.print(pid.get_p_gain());
+        // Send controller command to motor
+        motor.set_command(command);
+
+        control_prev_millis = curr_millis;
+
+//        Serial.print(pid.get_p_gain());
 //        Serial.print(" ");
 //        Serial.print(pid.get_p_control());
 //        Serial.print(" ");
-        Serial.print(command);
+//        Serial.print(pid.get_error());
+//        Serial.print(" ");
+//        Serial.print(pid.get_command());
+//        Serial.print(" ");
+//        Serial.print(command);
+//        Serial.print(" ");
+        Serial.print(2.0);
+        Serial.print(" ");
+        Serial.print(-2.0);
         Serial.print(" ");
         Serial.print(setpoint);
         Serial.print(" ");
-        Serial.println(encoder.get_count() / units);
-
-        // Send controller command to motor
-        motor.set_command(command); 
-        control_prev_millis = curr_millis;
+        Serial.println(curr_pos);
     }
 }
+
+//void TestMaxVelocity(Motor &motor, Encoder &encoder)
+//{
+//
+//    float command = 0;
+//
+//    if curr_millis - control_prev_millis) >= control_period
+//        if (curr_millis < 2000)
+//        {
+//            command = 0;
+//        }
+//        else
+//        {
+//            command = 1.0;
+//        }
+//
+//    Serial.print(command);
+//    Serial.print(" ");
+//    Serial.println(encoder.get_vel_rps());
+//}
 
 }
 

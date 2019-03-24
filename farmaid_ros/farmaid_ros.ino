@@ -11,7 +11,7 @@ unsigned long control_prev_millis;
 unsigned long print_prev_millis;
 unsigned long curr_millis;
 const unsigned long ros_period = 40; // ROS communication period [millis]
-const unsigned long control_period = 10; // control loop period [millis]
+const unsigned long control_period = 5; // control loop period [millis]
 const unsigned long print_period = 10; // period for printing to terminal for debugging [millis]
 
 const float wheelbase = 0.14; // [m]
@@ -72,18 +72,28 @@ void loop() {
     // Test individual components
 //    ReadEncoders(); // Passed!
 //    Farmaid::TestEncoderClass(); // Passed!
-//    TestMotorOpenLoop(left_motor, 1); // Passed!
-//    TestMotorOpenLoop(left_motor, -1); // Passed!
-//    TestMotorOpenLoop(right_motor, 1); // Passed!
-//    TestMotorOpenLoop(right_motor, -1); // Passed!
+//    Farmaid::TestMotorOpenLoop(left_motor, 1); // Passed!
+//    Farmaid::TestMotorOpenLoop(left_motor, -1); // Passed!
+//    Farmaid::TestMotorOpenLoop(right_motor, 1); // Passed!
+//    Farmaid::TestMotorOpenLoop(right_motor, -1); // Passed!
 
-    // Max change is 1 rotation
-    // At max change, should be 
-    left_pid.set_gains(2.0, 0.0, 0.0, 0.0);
-    TestMotorPositionControl(left_motor, left_encoder, left_pid, 1);
-//    right_motor_controller.DoPositionControl();
-//    left_motor_controller.DoVelocityControl();
-//    right_motor_controller.DoVelocityControl();
+      // Find deadband
+//      left_motor.set_command(0.28);
+//      left_motor.set_command(-0.11);
+//      right_motor.set_command(0.35);
+//      right_motor.set_command(-0.09);
+
+//    left_pid.set_gains(1.4, 0.3, 0.1, 0.1);
+//    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, 1); // Passed!
+//    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, -1); // Passed!
+//
+//    right_pid.set_gains(7.0, 0.0, 0.2, 10.0 * control_period / 1000.0);
+//    Farmaid::TestMotorPositionControl(right_motor, right_encoder, right_pid, 1); // Passed!
+//    Farmaid::TestMotorPositionControl(right_motor, right_encoder, right_pid, -1); // Passed!
+
+//    left_pid.set_gains(1.4, 0.3, 0.1, 0.1);
+//    Farmaid::TestMotorVelocityControl(left_motor, left_encoder, left_pid, 1); // Passed!
+//    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, -1); // Passed!
 
 //    UpdateRos(); // publish and subscribe to ROS topics
 //    robot.Drive(vel, ang_vel); // drive the robot
