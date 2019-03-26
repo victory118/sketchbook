@@ -22,8 +22,9 @@ namespace Farmaid
               prev_filt_error_(0), filt_error_(0),
               int_error_(0),
               p_control_(0), i_control_(0), d_control_(0), command_(0), error_(0),
-              max_deadband_(0), min_deadband_(),
-              max_command_(1), antiwindup_(100)
+              max_deadband_(0), min_deadband_(0),
+              max_command_(1), antiwindup_(100),
+              feedforward_flag_(false)
         {
         }
 
@@ -48,8 +49,17 @@ namespace Farmaid
             // Sum up components
             command_ = p_control_ + i_control_ + d_control_;
 
+            // Feedforward
+            if (feedforward_flag_)
+            {
+                command_ = command_ + des;
+            }
+
             // Do integral reset/antiwindup
             IntegralErrorReset();
+
+            // Enforce deadband
+            EnforceDeadband();
 
             // Set previous equal to current for next time step
             prev_filt_error_ = filt_error_;
@@ -69,6 +79,18 @@ namespace Farmaid
                 command_ = -max_command_;
                 int_error_ = (-antiwindup_ * max_command_ - p_control_ - d_control_) / i_gain_;
             }   
+        }
+
+        void EnforceDeadband()
+        {
+            if (command_ > 0 && command_ < max_deadband_)
+            {
+                command_ = 0;
+            }
+            else if (command_ < 0 && command_ > min_deadband_)
+            {
+                command_ = 0;
+            }
         }
 
         // TODO: Feedforward
@@ -99,6 +121,8 @@ namespace Farmaid
         void set_filt_tc(float filt_tc) { filt_tc_ = filt_tc; }
         void set_max_deadband(float max_deadband) { max_deadband_ = max_deadband; }
         void set_min_deadband(float min_deadband) { min_deadband_ = min_deadband; }
+        void set_antiwindup(float antiwindup) { antiwindup_ = antiwindup; }
+        void set_feedforward_flag(bool feedforward_flag) { feedforward_flag_ = feedforward_flag; }
         float get_p_gain() { return p_gain_; }
         float get_i_gain() { return i_gain_; }
         float get_d_gain() { return d_gain_; }
@@ -135,6 +159,7 @@ namespace Farmaid
         float command_; // total control command
         float max_command_; // absolute value of maximum command [0, 1]
         float antiwindup_; // usually set between 1.2 and 2; default = 100 will basically have no antiwindup effect
+        bool feedforward_flag_;
     };
 };
 

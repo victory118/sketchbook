@@ -6,22 +6,22 @@
 #include "robot.h"
 #include "test.h"
 
-unsigned long ros_prev_millis;
-unsigned long control_prev_millis;
-unsigned long print_prev_millis;
+unsigned long prev_ros_millis;
+unsigned long prev_control_millis;
+unsigned long prev_serial_millis;
 unsigned long curr_millis;
 const unsigned long ros_period = 40; // ROS communication period [millis]
 const unsigned long control_period = 5; // control loop period [millis]
-const unsigned long print_period = 10; // period for printing to terminal for debugging [millis]
+const unsigned long serial_period = 100; // period for printing to terminal for debugging [millis]
 
 const float wheelbase = 0.14; // [m]
 const float wheel_radius = 0.065 / 2; // [m]
 const float no_load_rps = 0.4 / wheel_radius; // determined experimentally in [m/s] --> [rad/s]
 
 // Initialize encoder parameter struct
-// {byte clk_pin (byte), byte dir_pin, float counts_per_rev, float sample_period}
-Farmaid::EncoderParams left_encoder_p = {2, 8, 1920.0, control_period / 1000.0};
-Farmaid::EncoderParams right_encoder_p = {3, 9, 1920.0, control_period / 1000.0};
+// {byte clk_pin (byte), byte dir_pin, float counts_per_rev, float sample_period, float filt_tc}
+Farmaid::EncoderParams left_encoder_p = {2, 8, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
+Farmaid::EncoderParams right_encoder_p = {3, 9, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
 
 // Initialize motor parameter struct
 // {byte pwm_pin, byte dir_pin, unsigned int max_command, float no_load_rps}
@@ -77,23 +77,67 @@ void loop() {
 //    Farmaid::TestMotorOpenLoop(right_motor, 1); // Passed!
 //    Farmaid::TestMotorOpenLoop(right_motor, -1); // Passed!
 
-      // Find deadband
-//      left_motor.set_command(0.28);
-//      left_motor.set_command(-0.11);
-//      right_motor.set_command(0.35);
-//      right_motor.set_command(-0.09);
+    // Find deadband
+//    left_motor.set_command(0.28);
+//    left_motor.set_command(-0.11);
+//    right_motor.set_command(0.35);
+//    right_motor.set_command(-0.09);
 
-//    left_pid.set_gains(1.4, 0.3, 0.1, 0.1);
+    // Motor position control
+    
+//    left_pid.set_gains(7.5, 0.0, 0.25, 10.0 * control_period / 1000.0);
+//    left_pid.set_max_deadband(0.15);
+//    left_pid.set_min_deadband(-0.1);
 //    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, 1); // Passed!
 //    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, -1); // Passed!
-//
-//    right_pid.set_gains(7.0, 0.0, 0.2, 10.0 * control_period / 1000.0);
+
+//    right_pid.set_gains(7.0, 0.0, 0.25, 10.0 * control_period / 1000.0);
+//    right_pid.set_max_deadband(0.18);
+//    right_pid.set_min_deadband(-0.1);
 //    Farmaid::TestMotorPositionControl(right_motor, right_encoder, right_pid, 1); // Passed!
 //    Farmaid::TestMotorPositionControl(right_motor, right_encoder, right_pid, -1); // Passed!
 
-//    left_pid.set_gains(1.4, 0.3, 0.1, 0.1);
-//    Farmaid::TestMotorVelocityControl(left_motor, left_encoder, left_pid, 1); // Passed!
-//    Farmaid::TestMotorPositionControl(left_motor, left_encoder, left_pid, -1); // Passed!
+    // Find maximum speed of each motor to add feedforward to PID controller
+//    Farmaid::TestMaxSpeed(left_motor, left_encoder, 1); // 13.09 rad/s * 0.065/2 m = 0.425 m/s
+//    Farmaid::TestMaxSpeed(left_motor, left_encoder, -1); // 12.44 rad/s * 0.065/2 m = 0.404 m/s
+//    Farmaid::TestMaxSpeed(right_motor, right_encoder, 1); // 13.09 rad/s * 0.065/2 m = 0.425 m/s
+//    Farmaid::TestMaxSpeed(right_motor, right_encoder, -1); // 13.09 rad/s * 0.065/2 m = 0.425 m/s
+
+    // Motor velocity control
+
+    // Step velocity commands with PID only
+//    left_pid.set_gains(12.0, 3.0, 0.1, 10.0 * control_period / 1000.0);
+//    left_pid.set_antiwindup(1.2); // Antiwindup makes it worse. Need to debug this.
+//    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, 1); // Passed!
+//    left_pid.set_gains(11.0, 2.5, 0.0, 10.0 * control_period / 1000.0);
+//    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, -1); // Passed!
+
+//    right_pid.set_gains(12.0, 3.0, 0.1, 10.0 * control_period / 1000.0);
+//    Farmaid::TestMotorVelocityStep(right_motor, right_encoder, right_pid, 1); // Passed!
+//    right_pid.set_gains(11.0, 2.0, 0.0, 10.0 * control_period / 1000.0);
+//    Farmaid::TestMotorVelocityStep(right_motor, right_encoder, right_pid, -1); // Passed!
+
+    // Step velocity commands with PID and feedforward
+//    left_pid.set_gains(1.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    left_pid.set_feedforward_flag(true);
+//    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, 1); // Passed!
+//    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, -1); // Passed!
+
+//    right_pid.set_gains(2.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    right_pid.set_feedforward_flag(true);
+//    Farmaid::TestMotorVelocityStep(right_motor, right_encoder, right_pid, 1); // Passed!
+//    Farmaid::TestMotorVelocityStep(right_motor, right_encoder, right_pid, -1); // Passed!
+
+    // Sinusoidal velocity command with PID and feedforward
+//    left_pid.set_gains(3.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    left_pid.set_feedforward_flag(true);
+//    Farmaid::TestMotorVelocitySine(left_motor, left_encoder, left_pid, 1); // Passed!
+//    Farmaid::TestMotorVelocitySine(left_motor, left_encoder, left_pid, -1); // Passed!
+
+//    right_pid.set_gains(3.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    right_pid.set_feedforward_flag(true);
+    Farmaid::TestMotorVelocitySine(right_motor, right_encoder, right_pid, 1); // Passed!
+//    Farmaid::TestMotorVelocitySine(right_motor, right_encoder, right_pid, -1); // Passed!
 
 //    UpdateRos(); // publish and subscribe to ROS topics
 //    robot.Drive(vel, ang_vel); // drive the robot
@@ -103,10 +147,10 @@ void loop() {
 void UpdateRos()
 {
     // Publish and subscribe to ROS topics
-    if (curr_millis - ros_prev_millis >= ros_period)
+    if (curr_millis - prev_ros_millis >= ros_period)
     {
         // TODO
         // nh.spinOnce();
-        ros_prev_millis = curr_millis;
+        prev_ros_millis = curr_millis;
     }
 }
