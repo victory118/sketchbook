@@ -30,8 +30,9 @@ namespace Farmaid
          */
          Motor(MotorParams p)
             : pwm_pin_(p.pwm_pin), dir_pin_(p.dir_pin),
-              max_command_(p.max_command), command_(0),
-              no_load_rps_(p.no_load_rps)
+              max_command_(p.max_command),
+              no_load_rps_(p.no_load_rps),
+              command_(0)
          {
              pinMode(pwm_pin_, OUTPUT);
              pinMode(dir_pin_, OUTPUT);

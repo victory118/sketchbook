@@ -23,12 +23,16 @@ namespace Farmaid
         : left_encoder_(left_encoder), right_encoder_(right_encoder),
           left_motor_(left_motor), right_motor_(right_motor),
           left_pid_(left_pid), right_pid_(right_pid),
-          wheelbase_(wheelbase), wheel_radius_(wheel_radius)
+          wheelbase_(wheelbase), wheel_radius_(wheel_radius),
+          ensure_ang_vel_(true)
         {
-            // TODO: Calculate max_vel
-            max_vel_ = 0.0;
-            // TODO: Calculate max_ang_vel
-            max_ang_vel_ = 0.0;
+            max_vel_ = min(left_motor_.get_no_load_rps(), right_motor_.get_no_load_rps()) * wheel_radius_;
+            max_ang_vel_ = max_vel_ / (wheelbase_ / 2);
+
+            left_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * left_pid_.get_sample_period());
+            left_pid_.set_feedforward_flag(true);
+            right_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * right_pid_.get_sample_period());
+            right_pid_.set_feedforward_flag(true);
         }
 
         void Drive(float vel, float ang_vel)
@@ -100,6 +104,13 @@ namespace Farmaid
 
             return diff_drive_wheel_vel;
         }
+
+        float get_max_vel() { return max_vel_; }
+        float get_max_ang_vel() { return max_ang_vel_; }
+        bool get_ensure_ang_vel() { return ensure_ang_vel_; }
+        void set_max_vel(float max_vel) { max_vel_ = max_vel; }
+        void set_max_ang_vel(float max_ang_vel) { max_ang_vel_ = max_ang_vel; }
+        void set_ensure_ang_vel(bool ensure_ang_vel) { ensure_ang_vel_ = ensure_ang_vel; }
         
     private:
         Encoder left_encoder_;

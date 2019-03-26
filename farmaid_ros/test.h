@@ -297,6 +297,50 @@ void TestMaxSpeed(Motor &motor, Encoder &encoder, float dir)
     }
 }
 
+void TestRobotForward(Robot &robot)
+{
+    if (curr_millis - prev_control_millis >= control_period)
+    {
+        if (curr_millis < 4000) { robot.Drive(0, 0); }
+        else if (curr_millis < 6000) { robot.Drive(robot.get_max_vel()/4, 0); } // Forward
+        else if (curr_millis < 8000) { robot.Drive(robot.get_max_vel()/2, 0); } // Forward
+        else if (curr_millis < 10000) { robot.Drive(robot.get_max_vel()/4, 0); } // Forward
+        else if (curr_millis < 11000) { robot.Drive(0, 0); } // Stop
+        else if (curr_millis < 13000) { robot.Drive(-robot.get_max_vel()/4, 0); } // Backward
+        else if (curr_millis < 15000) { robot.Drive(-robot.get_max_vel()/2, 0); } // Backward
+        else if (curr_millis < 17000) { robot.Drive(-robot.get_max_vel()/4, 0); } // Backward
+        else { robot.Drive(0, 0); }
+    }
+}
+
+void TestRobotRotate(Robot &robot)
+{
+    if (curr_millis - prev_control_millis >= control_period)
+    {
+        if (curr_millis < 4000) { robot.Drive(0, 0); }
+        else if (curr_millis < 6000) { robot.Drive(0, robot.get_max_ang_vel()/4); } // Forward
+        else if (curr_millis < 8000) { robot.Drive(0, robot.get_max_ang_vel()/2); } // Forward
+        else if (curr_millis < 10000) { robot.Drive(0, robot.get_max_ang_vel()/4); } // Forward
+        else if (curr_millis < 11000) { robot.Drive(0, 0); } // Stop
+        else if (curr_millis < 13000) { robot.Drive(0, -robot.get_max_ang_vel()/4); } // Backward
+        else if (curr_millis < 15000) { robot.Drive(0, -robot.get_max_ang_vel()/2); } // Backward
+        else if (curr_millis < 17000) { robot.Drive(0, -robot.get_max_ang_vel()/4); } // Backward
+        else { robot.Drive(0, 0); }
+    }
+}
+
+void TestRobotCircle(Robot &robot, float radius, float dir)
+{
+    float vel = robot.get_max_vel()/3;
+    float ang_vel = vel / radius * dir;
+    if (curr_millis - prev_control_millis >= control_period)
+    {
+        if (curr_millis < 4000) { robot.Drive(0, 0); }
+        else if (curr_millis < 16000) { robot.Drive(vel, ang_vel); }
+        else { robot.Drive(0, 0); }
+    }
+}
+
 }
 
 

@@ -55,8 +55,8 @@ namespace Farmaid
                 command_ = command_ + des;
             }
 
-            // Do integral reset/antiwindup
-            IntegralErrorReset();
+            // Do integral reset/antiwindup - NEEDS DEBUGGING!!!
+//            IntegralErrorReset();
 
             // Enforce deadband
             EnforceDeadband();
@@ -127,6 +127,7 @@ namespace Farmaid
         float get_i_gain() { return i_gain_; }
         float get_d_gain() { return d_gain_; }
         float get_filt_tc() { return filt_tc_; }
+        float get_sample_period() { return sample_period_; }
         float get_p_control() { return p_control_; }
         float get_i_control() { return i_control_; }
         float get_d_control() { return d_control_; }

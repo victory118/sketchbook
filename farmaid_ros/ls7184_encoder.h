@@ -1,3 +1,9 @@
+/**
+ * @file ls7184_encoder.h
+ * @brief Quadrature encoder counter driver for the LSI-LS7184
+ * @author Victor Yu
+ */
+
 #ifndef LS7184_ENCODER_H
 #define LS7184_ENCODER_H
 
@@ -24,8 +30,7 @@ namespace Farmaid
               sample_period_(p.sample_period),
               filt_tc_(p.filt_tc_),
               count_ptr_(count_ptr),
-              count_(0),
-              prev_count_(0),
+              count_(0), prev_count_(0),
               vel_cps_(0), filt_vel_cps_(0), prev_filt_vel_cps_(0)                        
         {
             pinMode(clk_pin_, INPUT);
