@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "drv8833_motor.h"
-#include "encoder.h"
+#include "ls7184_encoder.h"
 #include "pid_controller.h"
 #include "motor_controller.h"
 #include "robot.h"
@@ -134,8 +134,8 @@ void loop() {
 //    Farmaid::TestMotorVelocitySine(left_motor, left_encoder, left_pid, 1); // Passed!
 //    Farmaid::TestMotorVelocitySine(left_motor, left_encoder, left_pid, -1); // Passed!
 
-//    right_pid.set_gains(3.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
-//    right_pid.set_feedforward_flag(true);
+    right_pid.set_gains(3.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+    right_pid.set_feedforward_flag(true);
     Farmaid::TestMotorVelocitySine(right_motor, right_encoder, right_pid, 1); // Passed!
 //    Farmaid::TestMotorVelocitySine(right_motor, right_encoder, right_pid, -1); // Passed!
 

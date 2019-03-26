@@ -1,5 +1,5 @@
-#ifndef ENCODER_H
-#define ENCODER_H
+#ifndef LS7184_ENCODER_H
+#define LS7184_ENCODER_H
 
 #include <Arduino.h>
 

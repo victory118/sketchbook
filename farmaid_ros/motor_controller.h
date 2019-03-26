@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "drv8833_motor.h"
-#include "encoder.h"
+#include "ls7184_encoder.h"
 #include "pid_controller.h"
 
 namespace Farmaid

@@ -2,7 +2,7 @@
 #define TEST_H
 
 #include <Arduino.h>
-#include "encoder.h"
+#include "ls7184_encoder.h"
 
 extern unsigned long curr_millis;
 extern unsigned long prev_serial_millis;
