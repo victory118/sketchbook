@@ -1,18 +1,23 @@
-#include <Arduino.h>
-#include "drv8833_motor.h"
-#include "ls7184_encoder.h"
-#include "pid_controller.h"
-#include "motor_controller.h"
-#include "robot.h"
-#include "test.h"
+#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
+//#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
 
-unsigned long prev_ros_millis;
+#define TESTING // initialize motor, encoder, and pid controller objects individually for testing
+//#define ROS_TELEOP // initialize robot object only when connected to ROS for teleop
+
+#include <Arduino.h>
+#include "pid_controller.h"
+
 unsigned long prev_control_millis;
 unsigned long prev_serial_millis;
 unsigned long curr_millis;
-const unsigned long ros_period = 40; // ROS communication period [millis]
 const unsigned long control_period = 5; // control loop period [millis]
 const unsigned long serial_period = 100; // period for printing to terminal for debugging [millis]
+
+#ifdef UNO_2WD
+
+#include "drv8833_motor.h"
+#include "ls7184_encoder.h"
+#include "robot.h"
 
 const float wheelbase = 0.14; // [m]
 const float wheel_radius = 0.065 / 2; // [m]
@@ -33,7 +38,12 @@ Farmaid::MotorParams right_motor_p = {5, 4, 255, no_load_rps};
 Farmaid::PidParams left_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 Farmaid::PidParams right_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 
-// Initialize encoders, motors, and PID controllers
+#ifdef TESTING
+
+#include "test.h"
+
+// Initialize encoders, motors, and PID controllers for testing only
+// Otherwise it occupies too much RAM to have these objects defined and the robot owning another copy
 Farmaid::Encoder left_encoder = Farmaid::Encoder(left_encoder_p, &left_encoder_count);
 Farmaid::Encoder right_encoder = Farmaid::Encoder(right_encoder_p, &right_encoder_count);
 Farmaid::Motor left_motor = Farmaid::Motor(left_motor_p);
@@ -41,25 +51,75 @@ Farmaid::Motor right_motor = Farmaid::Motor(right_motor_p);
 Farmaid::PidController left_pid = Farmaid::PidController(left_pid_p);
 Farmaid::PidController right_pid = Farmaid::PidController(right_pid_p);
 
-// Initialize motor controller objects for debugging motors individually
-Farmaid::MotorController left_motor_controller = Farmaid::MotorController(left_encoder, left_motor, left_pid);
-Farmaid::MotorController right_motor_controller = Farmaid::MotorController(right_encoder, right_motor, right_pid);
-
 // Initialize robot
+// Use this robot initialization for testing 
 Farmaid::Robot robot = Farmaid::Robot(left_encoder, right_encoder,
                                       left_motor, right_motor,
                                       left_pid, right_pid,
                                       wheelbase, wheel_radius);
 
-// TODO: Initialize ROS node handle, publishers, and subscribers
+#endif
+#endif
+
+#ifdef ROS_TELEOP
+
+#include <ros.h>
+#include <geometry_msgs/Twist.h>
+
+unsigned long prev_ros_millis;
+const unsigned long ros_period = 20; // ROS communication period [millis]
+
+// Use this robot initialization when running teleop mode with ROS
+Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(left_encoder_p, &left_encoder_count), Farmaid::Encoder(right_encoder_p, &right_encoder_count),
+                                      Farmaid::Motor(left_motor_p), Farmaid::Motor(right_motor_p),
+                                      Farmaid::PidController(left_pid_p), Farmaid::PidController(right_pid_p),
+                                      wheelbase, wheel_radius);
+
+// Initialize ROS node handle, publishers, and subscribers
+ros::NodeHandle nh;
+geometry_msgs::Twist cmd_vel;
+
+void RosCallBack(const geometry_msgs::Twist &twist_msg)
+{
+    cmd_vel.linear.x = twist_msg.linear.x;
+    cmd_vel.angular.z = twist_msg.angular.z;
+}
+
+ros::Subscriber <geometry_msgs::Twist> sub("/cmd_vel", RosCallBack);
+
+void UpdateRos()
+{
+    // Publish and subscribe to ROS topics
+    if (curr_millis - prev_ros_millis >= ros_period)
+    {
+        nh.spinOnce();
+        prev_ros_millis = curr_millis;
+    }
+}
+
+#endif
 
 void setup() {
 
+    curr_millis = millis();
+
+#ifdef ROS_TELEOP
+    // Initialize ROS node
+    nh.initNode();
+    nh.subscribe(sub);
+    prev_ros_millis = curr_millis;
+#endif
+
+#ifdef TESTING
+    prev_serial_millis = curr_millis;
+    Serial.begin(9600);       // initialize Serial Communication
+#endif
+
+    prev_control_millis = curr_millis;
+    
     // Attach encoder interrupts
     attachInterrupt(0, LeftEncoderInterrupt, RISING);
     attachInterrupt(1, RightEncoderInterrupt, RISING);
-
-    Serial.begin(9600);       // initialize Serial Communication
 
     // Necessary for encoder interrupts to initialize
     delay(200);
@@ -142,20 +202,9 @@ void loop() {
     // Test robot drive method (PID gains and feedforward_flag set in Robot constructor)
 //    Farmaid::TestRobotForward(robot); // Passed!
 //    Farmaid::TestRobotRotate(robot);
-    Farmaid::TestRobotCircle(robot, 0.3, -1);
+//    Farmaid::TestRobotCircle(robot, 0.3, -1);
 
 //    UpdateRos(); // publish and subscribe to ROS topics
-//    robot.Drive(vel, ang_vel); // drive the robot
+//    robot.Drive(cmd_vel.linear.x, cmd_vel.angular.z); // drive the robot
 
-}
-
-void UpdateRos()
-{
-    // Publish and subscribe to ROS topics
-    if (curr_millis - prev_ros_millis >= ros_period)
-    {
-        // TODO
-        // nh.spinOnce();
-        prev_ros_millis = curr_millis;
-    }
 }
