@@ -1,11 +1,20 @@
-#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
-//#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
+// Choose Arduino board and robot configuration (comment out the other one)
+//#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
+#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
 
+// Choose testing mode or ROS teleop mode (comment out the other one)
 #define TESTING // initialize motor, encoder, and pid controller objects individually for testing
 //#define ROS_TELEOP // initialize robot object only when connected to ROS for teleop
 
 #include <Arduino.h>
 #include "pid_controller.h"
+
+#ifdef ROS_TELEOP
+
+#include <ros.h>
+#include <geometry_msgs/Twist.h>
+
+#endif
 
 unsigned long prev_control_millis;
 unsigned long prev_serial_millis;
@@ -38,6 +47,8 @@ Farmaid::MotorParams right_motor_p = {5, 4, 255, no_load_rps};
 Farmaid::PidParams left_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 Farmaid::PidParams right_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 
+#include "uno_2wd_helper.h" // encoder interrupt callback functions
+
 #ifdef TESTING
 
 #include "test.h"
@@ -46,8 +57,10 @@ Farmaid::PidParams right_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
 // Otherwise it occupies too much RAM to have these objects defined and the robot owning another copy
 Farmaid::Encoder left_encoder = Farmaid::Encoder(left_encoder_p, &left_encoder_count);
 Farmaid::Encoder right_encoder = Farmaid::Encoder(right_encoder_p, &right_encoder_count);
+
 Farmaid::Motor left_motor = Farmaid::Motor(left_motor_p);
 Farmaid::Motor right_motor = Farmaid::Motor(right_motor_p);
+
 Farmaid::PidController left_pid = Farmaid::PidController(left_pid_p);
 Farmaid::PidController right_pid = Farmaid::PidController(right_pid_p);
 
@@ -58,22 +71,103 @@ Farmaid::Robot robot = Farmaid::Robot(left_encoder, right_encoder,
                                       left_pid, right_pid,
                                       wheelbase, wheel_radius);
 
-#endif
-#endif
-
-#ifdef ROS_TELEOP
-
-#include <ros.h>
-#include <geometry_msgs/Twist.h>
-
-unsigned long prev_ros_millis;
-const unsigned long ros_period = 20; // ROS communication period [millis]
+#else
 
 // Use this robot initialization when running teleop mode with ROS
 Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(left_encoder_p, &left_encoder_count), Farmaid::Encoder(right_encoder_p, &right_encoder_count),
                                       Farmaid::Motor(left_motor_p), Farmaid::Motor(right_motor_p),
                                       Farmaid::PidController(left_pid_p), Farmaid::PidController(right_pid_p),
                                       wheelbase, wheel_radius);
+
+#endif
+#endif
+
+#ifdef MEGA_4WD
+
+#include "drv8833_motor.h"
+#include "ls7184_encoder.h"
+#include "robot.h"
+
+const float wheelbase = 0.14; // [m]
+const float wheel_radius = 0.065 / 2; // [m]
+const float no_load_rps = 0.4 / wheel_radius; // determined experimentally in [m/s] --> [rad/s]
+
+// Initialize encoder parameter struct
+// {byte clk_pin (byte), byte dir_pin, float counts_per_rev, float sample_period, float filt_tc}
+Farmaid::EncoderParams fleft_encoder_p = {2, 22, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
+Farmaid::EncoderParams fright_encoder_p = {3, 23, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
+Farmaid::EncoderParams rright_encoder_p = {18, 24, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
+Farmaid::EncoderParams rleft_encoder_p = {19, 25, 1920.0, control_period / 1000.0, 4.0 * control_period / 1000.0};
+
+// Initialize motor parameter struct
+// {byte pwm_pin, byte dir_pin, unsigned int max_command, float no_load_rps}
+Farmaid::MotorParams fleft_motor_p = {5, 4, 255, no_load_rps};
+Farmaid::MotorParams fright_motor_p = {7, 6, 255, no_load_rps};
+Farmaid::MotorParams rright_motor_p = {9, 8, 255, no_load_rps};
+Farmaid::MotorParams rleft_motor_p = {11, 10, 255, no_load_rps};
+
+// Initialize PID controller parameter struct
+// {float p_gain, float i_gain, float d_gain, float filt_const, float sample_period}
+Farmaid::PidParams fleft_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
+Farmaid::PidParams fright_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
+Farmaid::PidParams rright_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
+Farmaid::PidParams rleft_pid_p = {1.0, 0.0, 0.0, 0.0, control_period / 1000.0};
+
+#include "mega_4wd_helper.h" // encoder interrupt callback functions  
+
+#ifdef TESTING
+
+#include "test.h"
+
+// Initialize encoders, motors, and PID controllers for testing only
+// Otherwise it occupies too much RAM to have these objects defined and the robot owning another copy
+Farmaid::Encoder fleft_encoder = Farmaid::Encoder(fleft_encoder_p, &fleft_encoder_count);
+Farmaid::Encoder fright_encoder = Farmaid::Encoder(fright_encoder_p, &fright_encoder_count);
+Farmaid::Encoder rleft_encoder = Farmaid::Encoder(rleft_encoder_p, &rleft_encoder_count);
+Farmaid::Encoder rright_encoder = Farmaid::Encoder(rright_encoder_p, &rright_encoder_count);
+
+Farmaid::Motor fleft_motor = Farmaid::Motor(fleft_motor_p);
+Farmaid::Motor fright_motor = Farmaid::Motor(fright_motor_p);
+Farmaid::Motor rleft_motor = Farmaid::Motor(rleft_motor_p);
+Farmaid::Motor rright_motor = Farmaid::Motor(rright_motor_p);
+
+Farmaid::PidController fleft_pid = Farmaid::PidController(fleft_pid_p);
+Farmaid::PidController fright_pid = Farmaid::PidController(fright_pid_p);
+Farmaid::PidController rleft_pid = Farmaid::PidController(rleft_pid_p);
+Farmaid::PidController rright_pid = Farmaid::PidController(rright_pid_p);
+
+// Initialize robot
+// Use this robot initialization for testing 
+Farmaid::Robot robot = Farmaid::Robot(fleft_encoder, fright_encoder,
+                                      fleft_motor, fright_motor,
+                                      fleft_pid, fright_pid,
+                                      wheelbase, wheel_radius);
+
+#else
+
+// Use this robot initialization when running teleop mode with ROS
+Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(fleft_encoder_p, &fleft_encoder_count), Farmaid::Encoder(fright_encoder_p, &fright_encoder_count),
+                                      Farmaid::Motor(fleft_motor_p), Farmaid::Motor(fright_motor_p),
+                                      Farmaid::PidController(fleft_pid_p), Farmaid::PidController(fright_pid_p),
+                                      wheelbase, wheel_radius);
+
+#endif
+#endif
+
+#ifdef ROS_TELEOP
+
+// These includes have to be done in the beginning of the file for some reason?
+//#include <ros.h>
+//#include <geometry_msgs/Twist.h>
+
+// Use this robot initialization when running teleop mode with ROS
+//Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(left_encoder_p, &left_encoder_count), Farmaid::Encoder(right_encoder_p, &right_encoder_count),
+//                                      Farmaid::Motor(left_motor_p), Farmaid::Motor(right_motor_p),
+//                                      Farmaid::PidController(left_pid_p), Farmaid::PidController(right_pid_p),
+//                                      wheelbase, wheel_radius);
+
+unsigned long prev_ros_millis;
+const unsigned long ros_period = 20; // ROS communication period [millis]
 
 // Initialize ROS node handle, publishers, and subscribers
 ros::NodeHandle nh;
@@ -118,8 +212,17 @@ void setup() {
     prev_control_millis = curr_millis;
     
     // Attach encoder interrupts
+#ifdef UNO_2WD
     attachInterrupt(0, LeftEncoderInterrupt, RISING);
     attachInterrupt(1, RightEncoderInterrupt, RISING);
+#endif
+
+#ifdef MEGA_4WD
+    attachInterrupt(0, FLeftEncoderInterrupt, RISING);
+    attachInterrupt(1, FRightEncoderInterrupt, RISING);
+    attachInterrupt(5, RRightEncoderInterrupt, RISING);
+    attachInterrupt(4, RLeftEncoderInterrupt, RISING);
+#endif
 
     // Necessary for encoder interrupts to initialize
     delay(200);
@@ -128,10 +231,15 @@ void setup() {
 void loop() {
 
     curr_millis = millis();
+    
+#ifdef ROS_TELEOP
+    UpdateRos(); // publish and subscribe to ROS topics
+    robot.Drive(cmd_vel.linear.x, cmd_vel.angular.z); // drive the robot
+#endif
 
     // Test individual components
-//    ReadEncoders(); // Passed!
-//    Farmaid::TestEncoderClass(); // Passed!
+    ReadEncoders(); // Passed!
+//    Farmaid::TestEncoderClass(left_encoder, right_encoder); // Passed!
 //    Farmaid::TestMotorOpenLoop(left_motor, 1); // Passed!
 //    Farmaid::TestMotorOpenLoop(left_motor, -1); // Passed!
 //    Farmaid::TestMotorOpenLoop(right_motor, 1); // Passed!
@@ -178,7 +286,7 @@ void loop() {
 //    Farmaid::TestMotorVelocityStep(right_motor, right_encoder, right_pid, -1); // Passed!
 
     // Step velocity commands with PID and feedforward
-//    left_pid.set_gains(1.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    left_pid.set_gains(2.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
 //    left_pid.set_feedforward_flag(true);
 //    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, 1); // Passed!
 //    Farmaid::TestMotorVelocityStep(left_motor, left_encoder, left_pid, -1); // Passed!
@@ -202,9 +310,6 @@ void loop() {
     // Test robot drive method (PID gains and feedforward_flag set in Robot constructor)
 //    Farmaid::TestRobotForward(robot); // Passed!
 //    Farmaid::TestRobotRotate(robot);
-//    Farmaid::TestRobotCircle(robot, 0.3, -1);
-
-//    UpdateRos(); // publish and subscribe to ROS topics
-//    robot.Drive(cmd_vel.linear.x, cmd_vel.angular.z); // drive the robot
+//    Farmaid::TestRobotCircle(robot, 0.3, 1);
 
 }
