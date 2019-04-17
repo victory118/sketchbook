@@ -2,7 +2,7 @@
 #define TEST_H
 
 #include <Arduino.h>
-#include "ls7184_encoder.h"
+//#include "ls7184_encoder.h"
 
 extern unsigned long curr_millis;
 extern unsigned long prev_serial_millis;
@@ -10,39 +10,39 @@ extern unsigned long prev_control_millis;
 extern const unsigned long serial_period;
 extern const unsigned long control_period;
 
-extern volatile int left_encoder_count;
-extern volatile bool left_encoder_change_flag;
-extern volatile int right_encoder_count;
-extern volatile bool right_encoder_change_flag;
+//extern volatile int left_encoder_count;
+//extern volatile bool left_encoder_change_flag;
+//extern volatile int right_encoder_count;
+//extern volatile bool right_encoder_change_flag;
 
-extern Farmaid::Encoder left_encoder;
-extern Farmaid::Encoder right_encoder;
+//extern Farmaid::Encoder left_encoder;
+//extern Farmaid::Encoder right_encoder;
 
-void ReadEncoders()
-{
-
-    if (curr_millis - prev_serial_millis >= serial_period)
-    {
-        // This reads directly from the global variables
-        if (left_encoder_change_flag) {
-            left_encoder_change_flag = false;
-            Serial.print("Left encoder count = ");
-            Serial.println(left_encoder_count);
-        }
-
-        if (right_encoder_change_flag) {
-            right_encoder_change_flag = false;
-            Serial.print("Right encoder count = ");
-            Serial.println(right_encoder_count);
-        }
-
-        prev_serial_millis = curr_millis;
-    }        
-}
+//void ReadEncoders()
+//{
+//
+//    if (curr_millis - prev_serial_millis >= serial_period)
+//    {
+//        // This reads directly from the global variables
+//        if (left_encoder_change_flag) {
+//            left_encoder_change_flag = false;
+//            Serial.print("Left encoder count = ");
+//            Serial.println(left_encoder_count);
+//        }
+//
+//        if (right_encoder_change_flag) {
+//            right_encoder_change_flag = false;
+//            Serial.print("Right encoder count = ");
+//            Serial.println(right_encoder_count);
+//        }
+//
+//        prev_serial_millis = curr_millis;
+//    }        
+//}
 
 namespace Farmaid
 {
-void TestEncoderClass()
+void TestEncoderClass(Encoder &left_encoder, Encoder &right_encoder)
 {
 
     if (curr_millis - prev_serial_millis >= serial_period)
@@ -185,6 +185,7 @@ void TestMotorVelocityStep(Motor &motor, Encoder &encoder, PidController &pid, f
             setpoint = 0;   
         }
         else if (curr_millis < 10000)
+
         {
             setpoint = 0.4 * dir;
         }
@@ -230,7 +231,7 @@ void TestMotorVelocitySine(Motor &motor, Encoder &encoder, PidController &pid, f
 
     float sin_freq = 0.5; // (Hz)
     float max_range = motor.get_no_load_rps();
-    float setpoint = 0.5 * sin(2.0 * PI * sin_freq * curr_millis / 1000.0);
+    float setpoint = dir * 0.5 * sin(2.0 * PI * sin_freq * curr_millis / 1000.0);
     float command = 0;
     float curr_vel = 0;
 
