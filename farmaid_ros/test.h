@@ -1,44 +1,11 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include <Arduino.h>
-//#include "ls7184_encoder.h"
-
 extern unsigned long curr_millis;
 extern unsigned long prev_serial_millis;
 extern unsigned long prev_control_millis;
 extern const unsigned long serial_period;
 extern const unsigned long control_period;
-
-//extern volatile int left_encoder_count;
-//extern volatile bool left_encoder_change_flag;
-//extern volatile int right_encoder_count;
-//extern volatile bool right_encoder_change_flag;
-
-//extern Farmaid::Encoder left_encoder;
-//extern Farmaid::Encoder right_encoder;
-
-//void ReadEncoders()
-//{
-//
-//    if (curr_millis - prev_serial_millis >= serial_period)
-//    {
-//        // This reads directly from the global variables
-//        if (left_encoder_change_flag) {
-//            left_encoder_change_flag = false;
-//            Serial.print("Left encoder count = ");
-//            Serial.println(left_encoder_count);
-//        }
-//
-//        if (right_encoder_change_flag) {
-//            right_encoder_change_flag = false;
-//            Serial.print("Right encoder count = ");
-//            Serial.println(right_encoder_count);
-//        }
-//
-//        prev_serial_millis = curr_millis;
-//    }        
-//}
 
 namespace Farmaid
 {
