@@ -1,24 +1,24 @@
 // Choose Arduino board and robot configuration (comment out the other one)
-//#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
-#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
+#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
+//#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
 
 // Choose testing mode or ROS teleop mode (comment out the other one)
-#define TESTING // initialize motor, encoder, and pid controller objects individually for testing
-//#define ROS_TELEOP // initialize robot object only when connected to ROS for teleop
+//#define TESTING // initialize motor, encoder, and pid controller objects individually for testing
+#define ROS_TELEOP // initialize robot object only when connected to ROS for teleop
 
 //#include <Arduino.h>
-
-#ifdef ROS_TELEOP
-
-#include "ros_setup.h"
-
-#endif
 
 unsigned long prev_control_millis;
 unsigned long prev_serial_millis;
 unsigned long curr_millis;
 const unsigned long control_period = 5; // control loop period [millis]
 const unsigned long serial_period = 100; // period for printing to terminal for debugging [millis]
+
+#ifdef ROS_TELEOP
+
+#include "ros_setup.h"
+
+#endif
 
 #ifdef UNO_2WD
 
@@ -41,7 +41,7 @@ Farmaid::PidController right_pid = Farmaid::PidController(right_pid_p);
 
 // Initialize robot
 // Use this robot initialization for testing 
-Farmaid::Robot robot = Farmaid::Robot(left_encoder, right_encoder,
+Farmaid::TwoWheelDrive robot = Farmaid::TwoWheelDrive(left_encoder, right_encoder,
                                       left_motor, right_motor,
                                       left_pid, right_pid,
                                       wheelbase, wheel_radius);
@@ -49,7 +49,7 @@ Farmaid::Robot robot = Farmaid::Robot(left_encoder, right_encoder,
 #else
 
 // Use this robot initialization when running teleop mode with ROS
-Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(left_encoder_p, &left_encoder_count), Farmaid::Encoder(right_encoder_p, &right_encoder_count),
+Farmaid::TwoWheelDrive robot = Farmaid::TwoWheelDrive(Farmaid::Encoder(left_encoder_p, &left_encoder_count), Farmaid::Encoder(right_encoder_p, &right_encoder_count),
                                       Farmaid::Motor(left_motor_p), Farmaid::Motor(right_motor_p),
                                       Farmaid::PidController(left_pid_p), Farmaid::PidController(right_pid_p),
                                       wheelbase, wheel_radius);
@@ -84,18 +84,24 @@ Farmaid::PidController rright_pid = Farmaid::PidController(rright_pid_p);
 
 // Initialize robot
 // Use this robot initialization for testing 
-Farmaid::Robot robot = Farmaid::Robot(fleft_encoder, fright_encoder,
-                                      fleft_motor, fright_motor,
-                                      fleft_pid, fright_pid,
-                                      wheelbase, wheel_radius);
+Farmaid::FourWheelDrive robot = Farmaid::FourWheelDrive(fleft_encoder, fright_encoder,
+                                                        rleft_encoder, rright_encoder,
+                                                        fleft_motor, fright_motor,
+                                                        rleft_motor, rright_motor,
+                                                        fleft_pid, fright_pid,
+                                                        rleft_pid, rright_pid,
+                                                        wheelbase, wheel_radius);
 
 #else
 
 // Use this robot initialization when running teleop mode with ROS
-Farmaid::Robot robot = Farmaid::Robot(Farmaid::Encoder(fleft_encoder_p, &fleft_encoder_count), Farmaid::Encoder(fright_encoder_p, &fright_encoder_count),
-                                      Farmaid::Motor(fleft_motor_p), Farmaid::Motor(fright_motor_p),
-                                      Farmaid::PidController(fleft_pid_p), Farmaid::PidController(fright_pid_p),
-                                      wheelbase, wheel_radius);
+Farmaid::FourWheelDrive robot = Farmaid::FourWheelDrive(Farmaid::Encoder(fleft_encoder_p, &fleft_encoder_count), Farmaid::Encoder(fright_encoder_p, &fright_encoder_count),
+                                                        Farmaid::Encoder(rleft_encoder_p, &rleft_encoder_count), Farmaid::Encoder(rright_encoder_p, &rright_encoder_count),
+                                                        Farmaid::Motor(fleft_motor_p), Farmaid::Motor(fright_motor_p),
+                                                        Farmaid::Motor(rleft_motor_p), Farmaid::Motor(rright_motor_p),
+                                                        Farmaid::PidController(fleft_pid_p), Farmaid::PidController(fright_pid_p),
+                                                        Farmaid::PidController(rleft_pid_p), Farmaid::PidController(rright_pid_p),
+                                                        wheelbase, wheel_radius);
 
 #endif
 #endif
@@ -327,8 +333,8 @@ void loop() {
 //    Farmaid::TestMotorVelocitySine(rright_motor, rright_encoder, rright_pid, -1); //
 
     // Test robot drive method (PID gains and feedforward_flag set in Robot constructor)
-//    Farmaid::TestRobotForward(robot); // Passed!
-//    Farmaid::TestRobotRotate(robot);
-//    Farmaid::TestRobotCircle(robot, 0.3, 1);
+//    Farmaid::TestDiffSteerForward(robot); // Passed!
+//    Farmaid::TestDiffSteerRotate(robot);
+//    Farmaid::TestDiffSteerCircle(robot, -0.3, 1);
 
 }
