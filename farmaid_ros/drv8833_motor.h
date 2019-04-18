@@ -7,8 +7,6 @@
 #ifndef DRV8833_MOTOR_H
 #define DRV8833_MOTOR_H
 
-#include <Arduino.h>
-
 namespace Farmaid
 {
 
