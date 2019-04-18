@@ -7,8 +7,6 @@
 #ifndef LS7184_ENCODER_H
 #define LS7184_ENCODER_H
 
-#include <Arduino.h>
-
 namespace Farmaid
 {
 
