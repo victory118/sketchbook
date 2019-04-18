@@ -265,7 +265,7 @@ void TestMaxSpeed(Motor &motor, Encoder &encoder, float dir)
     }
 }
 
-void TestRobotForward(Robot &robot)
+void TestDiffSteerForward(DiffSteer &robot)
 {
     if (curr_millis - prev_control_millis >= control_period)
     {
@@ -281,7 +281,7 @@ void TestRobotForward(Robot &robot)
     }
 }
 
-void TestRobotRotate(Robot &robot)
+void TestDiffSteerRotate(DiffSteer &robot)
 {
     if (curr_millis - prev_control_millis >= control_period)
     {
@@ -297,7 +297,7 @@ void TestRobotRotate(Robot &robot)
     }
 }
 
-void TestRobotCircle(Robot &robot, float radius, float dir)
+void TestDiffSteerCircle(DiffSteer &robot, float radius, float dir)
 {
     float vel = robot.get_max_vel()/3;
     float ang_vel = vel / radius * dir;
