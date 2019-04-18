@@ -4,7 +4,7 @@
 #include "drv8833_motor.h"
 #include "ls7184_encoder.h"
 #include "pid_controller.h"
-#include "robot.h"
+#include "two_wheel_drive.h"
 
 const float wheelbase = 0.14; // [m]
 const float wheel_radius = 0.065 / 2; // [m]
