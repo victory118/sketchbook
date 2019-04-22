@@ -27,14 +27,14 @@ namespace Farmaid
                            min(rleft_motor_.get_no_load_rps(), rright_motor_.get_no_load_rps())) * wheel_radius_;
             max_ang_vel_ = max_vel_ / (wheelbase_ / 2);
 
-            fleft_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * fleft_pid_.get_sample_period());
+            fleft_pid_.set_gains(2.0, 0.0, 0.0, 10.0 * fleft_pid_.get_sample_period());
             fleft_pid_.set_feedforward_flag(true);
-            fright_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * fright_pid_.get_sample_period());
+            fright_pid_.set_gains(2.0, 0.0, 0.0, 10.0 * fright_pid_.get_sample_period());
             fright_pid_.set_feedforward_flag(true);
 
-            rleft_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * rleft_pid_.get_sample_period());
+            rleft_pid_.set_gains(2.0, 0.0, 0.0, 10.0 * rleft_pid_.get_sample_period());
             rleft_pid_.set_feedforward_flag(true);
-            rright_pid_.set_gains(3.0, 0.0, 0.0, 10.0 * rright_pid_.get_sample_period());
+            rright_pid_.set_gains(2.0, 0.0, 0.0, 10.0 * rright_pid_.get_sample_period());
             rright_pid_.set_feedforward_flag(true);
         }
 
