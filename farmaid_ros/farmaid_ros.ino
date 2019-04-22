@@ -1,6 +1,6 @@
 // Choose Arduino board and robot configuration (comment out the other one)
-#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
-//#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
+//#define UNO_2WD // initialize parameters for 2 wheel drive robot on Arduino Uno
+#define MEGA_4WD // initialize parameters for 4 wheel drive robot on Arduino Mega
 
 // Choose testing mode or ROS teleop mode (comment out the other one)
 //#define TESTING // initialize motor, encoder, and pid controller objects individually for testing
@@ -177,6 +177,15 @@ void loop() {
 //    right_motor.set_command(0.35);
 //    right_motor.set_command(-0.09);
 
+//      fleft_motor.set_command(0.04);
+//      fleft_motor.set_command(-0.04);
+//      fright_motor.set_command(0.04);
+//      fright_motor.set_command(-0.04);
+//      rright_motor.set_command(0.04);
+//      rright_motor.set_command(-0.04);
+//      rleft_motor.set_command(0.04);
+//      rleft_motor.set_command(-0.04);
+
     // Motor position control
     
 //    left_pid.set_gains(7.5, 0.0, 0.25, 10.0 * control_period / 1000.0);
@@ -192,14 +201,14 @@ void loop() {
 //    Farmaid::TestMotorPositionControl(right_motor, right_encoder, right_pid, -1); // Passed!
 
 //    fleft_pid.set_gains(7.5, 0.0, 0.25, 10.0 * control_period / 1000.0);
-//    fleft_pid.set_max_deadband(0.15);
-//    fleft_pid.set_min_deadband(-0.1);
+//    fleft_pid.set_max_deadband(0.04);
+//    fleft_pid.set_min_deadband(-0.04);
 //    Farmaid::TestMotorPositionControl(fleft_motor, fleft_encoder, fleft_pid, 1); // Passed with Mega 2wd robot
 //    Farmaid::TestMotorPositionControl(fleft_motor, fleft_encoder, fleft_pid, -1); // Passed with Mega 2wd robot
 
 //    fright_pid.set_gains(7.0, 0.0, 0.25, 10.0 * control_period / 1000.0);
-//    fright_pid.set_max_deadband(0.18);
-//    fright_pid.set_min_deadband(-0.1);
+//    fright_pid.set_max_deadband(0.04);
+//    fright_pid.set_min_deadband(-0.04);
 //    Farmaid::TestMotorPositionControl(fright_motor, fright_encoder, fright_pid, 1); // Passed with Mega 2wd robot
 //    Farmaid::TestMotorPositionControl(fright_motor, fright_encoder, fright_pid, -1); // Passed with Mega 2wd robot
 
@@ -222,10 +231,10 @@ void loop() {
 //    Farmaid::TestMaxSpeed(right_motor, right_encoder, 1); // 13.09 rad/s * 0.065/2 m = 0.425 m/s
 //    Farmaid::TestMaxSpeed(right_motor, right_encoder, -1); // 13.09 rad/s * 0.065/2 m = 0.425 m/s
 
-//    Farmaid::TestMaxSpeed(fleft_motor, fleft_encoder, 1); // Passed with Mega 2wd robot
-//    Farmaid::TestMaxSpeed(fleft_motor, fleft_encoder, -1); // Passed with Mega 2wd robot
-//    Farmaid::TestMaxSpeed(fright_motor, fright_encoder, 1); // Passed with Mega 2wd robot
-//    Farmaid::TestMaxSpeed(fright_motor, fright_encoder, -1); // Passed with Mega 2wd robot
+//    Farmaid::TestMaxSpeed(fleft_motor, fleft_encoder, 1); // Passed with Mega 2wd robot // 9.23 rad/s
+//    Farmaid::TestMaxSpeed(fleft_motor, fleft_encoder, -1); // Passed with Mega 2wd robot // 9.23 rad/s
+//    Farmaid::TestMaxSpeed(fright_motor, fright_encoder, 1); // Passed with Mega 2wd robot // 9.23 rad/s
+//    Farmaid::TestMaxSpeed(fright_motor, fright_encoder, -1); // Passed with Mega 2wd robot // 9.23 rad/s
 
 //    Farmaid::TestMaxSpeed(rleft_motor, rleft_encoder, 1); // Passed with Mega 2wd robot
 //    Farmaid::TestMaxSpeed(rleft_motor, rleft_encoder, -1); // Passed with Mega 2wd robot
@@ -322,7 +331,7 @@ void loop() {
 //    Farmaid::TestMotorVelocitySine(fright_motor, fright_encoder, fright_pid, 1); // Passed with Mega 2wd robot
 //    Farmaid::TestMotorVelocitySine(fright_motor, fright_encoder, fright_pid, -1); // Passed with Mega 2wd robot
 
-//    rleft_pid.set_gains(3.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
+//    rleft_pid.set_gains(2.0, 0.0, 0.0, 10.0 * control_period / 1000.0);
 //    rleft_pid.set_feedforward_flag(true);
 //    Farmaid::TestMotorVelocitySine(rleft_motor, rleft_encoder, rleft_pid, 1); //
 //    Farmaid::TestMotorVelocitySine(rleft_motor, rleft_encoder, rleft_pid, -1); //
@@ -335,6 +344,6 @@ void loop() {
     // Test robot drive method (PID gains and feedforward_flag set in Robot constructor)
 //    Farmaid::TestDiffSteerForward(robot); // Passed!
 //    Farmaid::TestDiffSteerRotate(robot);
-//    Farmaid::TestDiffSteerCircle(robot, -0.3, 1);
+//    Farmaid::TestDiffSteerCircle(robot, 0.3, -1);
 
 }
